@@ -7,18 +7,7 @@ if(!isset($_SESSION['usuario']) || empty($_SESSION['usuario'])) {
     exit;
 }
 
-// Configurações do banco de dados
-$host = 'localhost';
-$dbname = 'techweek';
-$username = 'wellton';
-$password = '123';
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Erro na conexão com o banco de dados: " . $e->getMessage());
-}
+include("conexao.php");
 
 // Recuperar dados do usuário
 $usuario = $_SESSION['usuario'];
@@ -798,7 +787,7 @@ if ($isAdmin) {
                         </button>
                         <div class="user-dropdown" id="userDropdown">
                             <a href="#dados"><i class="fas fa-user-circle"></i> Meu Perfil</a>
-                            <a href="index.php"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                            <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Sair</a>
                         </div>
                     </div>
                     

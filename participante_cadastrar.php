@@ -1,16 +1,7 @@
 <?php
 session_start();
 
-// Habilitar exibição de erros (apenas para desenvolvimento)
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// Configurações de conexão com o banco de dados
-$host = 'localhost';
-$dbname = 'techweek';
-$username = 'wellton';
-$password = '123';
+$pdo = include("conexao.php");
 
 // Receber os dados JSON
 $json = file_get_contents('php://input');
@@ -18,7 +9,6 @@ $data = json_decode($json, true);
 
 // Verificar se os dados foram recebidos corretamente
 if (!$data) {
-    //http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Dados inválidos']);
     exit;
 }
@@ -27,19 +17,18 @@ if (!$data) {
 $nome = filter_var($data['nome'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 $email = filter_var($data['email'], FILTER_SANITIZE_EMAIL);
 $cpf = filter_var($data['cpf'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+$senha = $data['senha'];
 $telefone = isset($data['telefone']) ? filter_var($data['telefone'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
-$instituicao = filter_var($data['instituicao'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+$instituicao = isset($data['instituicao']) ? filter_var($data['instituicao'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
 
 // Validar dados obrigatórios
-if (empty($nome) || empty($email) || empty($cpf) || empty($instituicao)) {
-    //http_response_code(400);
+if (empty($nome) || empty($email) || empty($cpf) || empty($senha)) {
     echo json_encode(['success' => false, 'message' => 'Preencha todos os campos obrigatórios']);
     exit;
 }
 
 // Validar formato de email
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    //http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Email inválido']);
     exit;
 }
@@ -73,16 +62,18 @@ function validarCPF($cpf) {
 }
 
 if (!validarCPF($cpf)) {
-    //http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'CPF inválido']);
     exit;
 }
 
+// Validar força da senha
+if (strlen($senha) < 6) {
+    echo json_encode(['success' => false, 'message' => 'A senha deve ter pelo menos 6 caracteres']);
+    exit;
+}
+
 try {
-    // Conectar ao banco de dados
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
+
     // Verificar se já existe um participante com o mesmo CPF ou email
     $stmt = $pdo->prepare("SELECT id FROM participantes WHERE cpf = :cpf OR email = :email");
     $stmt->execute([':cpf' => $cpf, ':email' => $email]);
@@ -93,17 +84,21 @@ try {
         exit;
     }
     
+    // Criptografar a senha
+    $senhaHash = password_hash($senha, PASSWORD_BCRYPT);
+    
     // Gerar hash único para o participante
     $hash = md5($cpf . $nome . time());
     
     // Inserir o novo participante no banco de dados
     $stmt = $pdo->prepare("INSERT INTO participantes (administrador, hash, nome, email, senha, cpf, telefone, instituicao, data_cadastro) 
-                          VALUES (1, :hash, :nome, :email, :cpf, :cpf, :telefone, :instituicao, NOW())");
+                          VALUES (0, :hash, :nome, :email, :senha, :cpf, :telefone, :instituicao, NOW())");
     
     $stmt->execute([
         ':hash' => $hash,
         ':nome' => $nome,
         ':email' => $email,
+        ':senha' => $senhaHash,
         ':cpf' => $cpf,
         ':telefone' => $telefone,
         ':instituicao' => $instituicao
