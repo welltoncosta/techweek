@@ -84,6 +84,16 @@ try {
         exit;
     }
     
+    // Obter o próximo número de inscrição
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM participantes");
+    $stmt->execute();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $numero_inscricao = $result['total'] + 1;
+    
+    // Gerar código de barras no formato TW20250001
+    $codigo_barra = 'TW2025' . str_pad($numero_inscricao, 4, '0', STR_PAD_LEFT);
+    
+    
     // Criptografar a senha
     $senhaHash = password_hash($senha, PASSWORD_BCRYPT);
     
@@ -91,8 +101,7 @@ try {
     $hash = md5($cpf . $nome . time());
     
     // Inserir o novo participante no banco de dados
-    $stmt = $pdo->prepare("INSERT INTO participantes (administrador, hash, nome, email, senha, cpf, telefone, instituicao, data_cadastro) 
-                          VALUES (0, :hash, :nome, :email, :senha, :cpf, :telefone, :instituicao, NOW())");
+    $stmt = $pdo->prepare("INSERT INTO participantes (administrador, tipo, hash, nome, email, senha, cpf, codigo_barra, telefone, instituicao, data_cadastro) VALUES (0, 'participante', :hash, :nome, :email, :senha, :cpf, :codigo_barra, :telefone, :instituicao, NOW())");
     
     $stmt->execute([
         ':hash' => $hash,
@@ -100,6 +109,7 @@ try {
         ':email' => $email,
         ':senha' => $senhaHash,
         ':cpf' => $cpf,
+        ':codigo_barra' => $codigo_barra,
         ':telefone' => $telefone,
         ':instituicao' => $instituicao
     ]);

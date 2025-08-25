@@ -82,7 +82,7 @@ function processarLogin($data, $pdo) {
         }
         
         // Buscar usuário
-        $stmt = $pdo->prepare("SELECT id, nome, email, senha FROM participantes WHERE $campo = :login");
+        $stmt = $pdo->prepare("SELECT id, nome, cpf, email, senha, instituicao, data_cadastro FROM participantes WHERE $campo = :login");
         $stmt->bindParam(':login', $login, PDO::PARAM_STR);
         $stmt->execute();
         

@@ -11,36 +11,29 @@ include("conexao.php");
 // Recuperar dados do usuário
 $usuario = $_SESSION['usuario'];
 
-// Processar alteração de senha
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
-    $senha_atual = $_POST['senha_atual'];
-    $nova_senha = $_POST['nova_senha'];
-    $confirmar_senha = $_POST['confirmar_senha'];
-    
-    // Verificar se a senha atual está correta
-    $stmt = $pdo->prepare("SELECT senha FROM participantes WHERE id = :id");
-    $stmt->execute([':id' => $usuario['id']]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (password_verify($senha_atual, $result['senha'])) {
-        if ($nova_senha === $confirmar_senha) {
-            // Atualizar a senha
-            $nova_senha_hash = password_hash($nova_senha, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE participantes SET senha = :senha WHERE id = :id");
-            $stmt->execute([':senha' => $nova_senha_hash, ':id' => $usuario['id']]);
-            
-            $mensagem_senha = "Senha alterada com sucesso!";
-            $tipo_mensagem = "sucesso";
-        } else {
-            $mensagem_senha = "As novas senhas não coincidem!";
-            $tipo_mensagem = "erro";
-        }
-    } else {
-        $mensagem_senha = "Senha atual incorreta!";
-        $tipo_mensagem = "erro";
-    }
+// Buscar atividades disponíveis
+$stmt = $pdo->prepare("SELECT * FROM atividades WHERE ativa = '1' ORDER BY data, horario");
+$stmt->execute();
+$todas_atividades = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Buscar atividades em que o participante está inscrito
+$stmt = $pdo->prepare("SELECT a.* FROM atividades a 
+                      INNER JOIN inscricoes_atividades i ON a.id = i.atividade_id 
+                      WHERE i.participante_id = :participante_id 
+                      ORDER BY a.data, a.horario");
+$stmt->execute([':participante_id' => $usuario['id']]);
+$atividades_inscritas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Criar array de IDs das atividades inscritas para verificação rápida
+$atividades_inscritas_ids = array();
+foreach ($atividades_inscritas as $atividade) {
+    $atividades_inscritas_ids[] = $atividade['id'];
 }
 
+// Buscar comprovantes do participante
+$stmt = $pdo->prepare("SELECT * FROM comprovantes WHERE participante_id = :participante_id ORDER BY data_envio DESC");
+$stmt->execute([':participante_id' => $usuario['id']]);
+$comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -50,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
     <title>Painel do Participante - 1ª TechWeek</title>
     <link href='https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-   <style>
-               :root {
+    <style>
+        :root {
             --black: #000000;
             --neon-green: #00FF00;
             --tech-green: #00BF63;
@@ -64,8 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
             --border-color: #00BF63;
             --accent-color: #00BF63;
             --accent-hover: #00FF00;
-            --error-color: #ff3860;
-            --success-color: #09c372;
+            --error-color: #ff4d4d;
+            --success-color: #00cc66;
         }
         
         .light-theme {
@@ -156,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
         }
         
         .logo img {
-            height: 80px;
+            height: 100px;
             transition: all 0.3s ease;
         }
         
@@ -607,13 +600,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
         }
         
         .message.sucesso {
-            background-color: rgba(9, 195, 114, 0.2);
+            background-color: rgba(0, 204, 102, 0.2);
             color: var(--success-color);
             border: 1px solid var(--success-color);
         }
         
         .message.erro {
-            background-color: rgba(255, 56, 96, 0.2);
+            background-color: rgba(255, 77, 77, 0.2);
             color: var(--error-color);
             border: 1px solid var(--error-color);
         }
@@ -767,103 +760,270 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
             border-top: 1px solid rgba(45, 125, 90, 0.2);
         }
         
-        /* Badge Styles */
-        .badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-right: 5px;
+        /* Estilos para as atividades */
+        .atividade-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
         
-        .badge-participante {
-            background-color: rgba(0, 191, 99, 0.2);
+        .atividade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .atividade-title {
+            font-size: 1.3rem;
+            color: var(--neon-green);
+            margin-bottom: 10px;
+        }
+        
+        .light-theme .atividade-title {
+            color: var(--accent-color);
+        }
+        
+        .atividade-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .atividade-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--light-gray);
+        }
+        
+        .atividade-vagas {
+            background: rgba(0, 191, 99, 0.2);
+            color: var(--neon-green);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .light-theme .atividade-vagas {
+            background: rgba(45, 125, 90, 0.1);
+            color: var(--accent-color);
+        }
+        
+        .atividade-descricao {
+            margin-bottom: 15px;
+            color: var(--light-gray);
+        }
+        
+        .atividade-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--neon-green);
             color: var(--neon-green);
         }
         
-        .badge-palestrante {
-            background-color: rgba(255, 193, 7, 0.2);
-            color: #ffc107;
+        .light-theme .tab.active {
+            border-bottom-color: var(--accent-color);
+            color: var(--accent-color);
         }
         
-        .badge-organizacao {
-            background-color: rgba(13, 110, 253, 0.2);
-            color: #0d6efd;
+        .tab-content {
+            display: none;
         }
         
-        /* Modal Styles */
-        .modal {
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Estilos para comprovantes */
+        .comprovante-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .comprovante-info {
+            flex: 1;
+        }
+        
+        .comprovante-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Preview Modal */
+        .preview-modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
             align-items: center;
             justify-content: center;
         }
         
-        .modal-content {
+        .preview-content {
             background-color: var(--card-bg);
-            border: 2px solid var(--border-color);
             border-radius: 10px;
             padding: 20px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+            position: relative;
         }
         
-        .light-theme .modal-content {
-            box-shadow: 0 0 20px rgba(45, 125, 90, 0.2);
-        }
-        
-        .modal h3 {
-            color: var(--neon-green);
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-        }
-        
-        .light-theme .modal h3 {
-            color: var(--accent-color);
-        }
-        
-        .modal p {
-            color: var(--light-gray);
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-        
-        .modal button {
-            padding: 10px 20px;
-            background: linear-gradient(45deg, var(--tech-green), var(--neon-green));
-            color: var(--black);
+        .preview-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--error-color);
+            color: white;
             border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .preview-body {
+            margin-top: 20px;
+        }
+        
+        .preview-body img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .preview-body iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+        }
+
+        /* File Upload */
+        .file-upload {
+            border: 2px dashed var(--border-color);
             border-radius: 5px;
-            font-weight: 600;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
             cursor: pointer;
             transition: all 0.3s ease;
         }
         
-        .light-theme .modal button {
+        .file-upload:hover {
+            border-color: var(--neon-green);
+            background-color: rgba(0, 191, 99, 0.05);
+        }
+        
+        .file-upload i {
+            font-size: 2rem;
+            color: var(--neon-green);
+            margin-bottom: 10px;
+        }
+        
+        .file-upload p {
+            color: var(--light-gray);
+            margin-bottom: 10px;
+        }
+        
+        .file-name {
+            margin-top: 10px;
+            font-style: italic;
+            color: var(--neon-green);
+        }
+        
+        /* Botões de ação */
+        .btn-edit {
+            background: linear-gradient(45deg, var(--tech-green), var(--neon-green));
+            color: var(--black);
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        .light-theme .btn-edit {
             background: linear-gradient(45deg, var(--accent-color), var(--accent-hover));
             color: white;
         }
         
-        .modal button:hover {
+        .btn-edit:hover {
             background: linear-gradient(45deg, var(--neon-green), var(--tech-green));
             box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
         }
         
-        .light-theme .modal button:hover {
+        .light-theme .btn-edit:hover {
             background: linear-gradient(45deg, var(--accent-hover), var(--accent-color));
             box-shadow: 0 0 10px rgba(45, 125, 90, 0.3);
         }
         
+        /* Formulário de edição */
+        .edit-form {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        
+        .password-fields {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .toggle-password {
+            background: none;
+            border: none;
+            color: var(--neon-green);
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            text-decoration: underline;
+        }
+        
+        .light-theme .toggle-password {
+            color: var(--accent-color);
+        }
         /* Media Queries para tablets e desktops */
         @media (min-width: 768px) {
             .menu-toggle {
@@ -901,153 +1061,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
                 text-align: left;
             }
         }
-        
-        /* CrachÃ¡ Styles */
-        .cracha {
-            width: 300px;
-            height: 180px;
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            margin: 10px;
-        }
-        
-        .cracha-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.1;
-            z-index: 1;
-        }
-        
-        .cracha-content {
-            position: relative;
-            z-index: 2;
-        }
-        
-        .cracha-tipo {
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .cracha-nome {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .cracha-codigo {
-            margin-top: 10px;
-        }
-        
-        .cracha-participante {
-            border-left: 5px solid var(--tech-green);
-        }
-        
-        .cracha-palestrante {
-            border-left: 5px solid #ffc107;
-        }
-        
-        .cracha-organizacao {
-            border-left: 5px solid #0d6efd;
-        }
-        
-        /* Certificate Styles */
-        .certificate {
-            background: white;
-            padding: 30px;
-            border: 15px solid #f1c40f;
-            text-align: center;
-            margin: 20px 0;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .certificate h2 {
-            color: #2c3e50;
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-        }
-        
-        .certificate p {
-            color: #7f8c8d;
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-        }
-        
-        .certificate .participant-name {
-            color: #2c3e50;
-            font-size: 2rem;
-            font-weight: bold;
-            margin: 30px 0;
-        }
-        
-        .certificate .date {
-            margin-top: 30px;
-            color: #7f8c8d;
-        }
-        
-        /* Payment Verification */
-        .verification-status {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-        }
-        
-        .status-icon {
-            margin-right: 10px;
-            font-size: 1.2rem;
-        }
-        
-        .status-approved {
-            color: var(--success-color);
-        }
-        
-        .status-pending {
-            color: #ffc107;
-        }
-        
-        .status-rejected {
-            color: var(--error-color);
-        }
-        
-        /* File Upload */
-        .file-upload {
-            border: 2px dashed var(--border-color);
-            border-radius: 5px;
-            padding: 20px;
-            text-align: center;
-            margin: 20px 0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .file-upload:hover {
-            border-color: var(--neon-green);
-            background-color: rgba(0, 191, 99, 0.05);
-        }
-        
-        .file-upload i {
-            font-size: 2rem;
-            color: var(--neon-green);
-            margin-bottom: 10px;
-        }
-        
-        .file-upload p {
-            color: var(--light-gray);
-            margin-bottom: 10px;
-        }
-        
-        .file-name {
-            margin-top: 10px;
-            font-style: italic;
-            color: var(--neon-green);
-        }
+
     </style>
 </head>
 <body>
@@ -1056,7 +1070,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
         <div class="container">
             <div class="header-content">
                 <div class="logo">
-                    <img src="imagens/logo.jpg" alt="Logo Tech Week">
+                    <img src="imagens/logo.jpg" alt="Logo Tech Week" class="logo-dark">
+                    <img src="imagens/logo-light.jpg" alt="Logo Tech Week" class="logo-light">
                     <div class="event-title">
                         <h1>1ª TechWeek</h1>
                         <span>Painel do Participante</span>
@@ -1066,7 +1081,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
                 <ul class="menu">
                     <li><a href="#dashboard">Dashboard</a></li>
                     <li><a href="#dados">Meus Dados</a></li>
-                    <li><a href="#oficinas">Minhas Oficinas</a></li>
+                    <li><a href="#comprovantes">Comprovantes</a></li>
+                    <li><a href="#atividades">Atividades</a></li>
                     <li><a href="#certificado">Certificado</a></li>                    
                 </ul>
 
@@ -1101,7 +1117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
             <!-- Welcome Section -->
             <section class="welcome-section">
                 <h1>Olá, <?php echo $usuario['nome']; ?>!</h1>
-                <p>Bem-vindo(a) ao seu painel de participante da 1ª TechWeek. Aqui você pode gerenciar suas inscrições, verificar suas oficinas e acessar seu certificado.</p>
+                <p>Bem-vindo(a) ao seu painel de participante da 1ª TechWeek. Aqui você pode gerenciar suas inscrições, verificar suas atividades e acessar seu certificado.</p>
             </section>
             
             <!-- Dashboard Cards -->
@@ -1114,10 +1130,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
                 </div>
                 
                 <div class="dashboard-card">
+                    <i class="fas fa-receipt"></i>
+                    <h3>Comprovantes</h3>
+                    <p>Envie e acompanhe seus comprovantes PIX</p>
+                    <a href="#comprovantes" class="btn">Ver Comprovantes</a>
+                </div>
+                
+                <div class="dashboard-card">
                     <i class="fas fa-calendar-alt"></i>
-                    <h3>Minhas Oficinas</h3>
-                    <p>Consulte as oficinas nas quais você está inscrito(a)</p>
-                    <a href="#oficinas" class="btn">Ver Oficinas</a>
+                    <h3>Minhas Atividades</h3>
+                    <p>Consulte as atividades nas quais você está inscrito(a)</p>
+                    <a href="#atividades" class="btn">Ver Atividades</a>
                 </div>
                 
                 <div class="dashboard-card">
@@ -1130,7 +1153,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
             
             <!-- User Info Section -->
             <section class="user-info" id="dados">
-                <h2>Meus Dados Pessoais</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Meus Dados Pessoais</h2>
+                    <button class="btn-edit" id="btnEditDados">
+                        <i class="fas fa-edit"></i> Editar Dados
+                    </button>
+                </div>
+                
                 <div class="info-grid">
                     <div class="info-item">
                         <span class="info-label">Nome Completo</span>
@@ -1144,7 +1173,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
                     
                     <div class="info-item">
                         <span class="info-label">CPF</span>
-                        <span class="info-value"><?php echo htmlspecialchars($usuario['cpf']); ?></span>
+                        <span class="info-value"><?php echo !empty($usuario['cpf']) ? htmlspecialchars($usuario['cpf']) : 'Não informado'; ?></span>
+                        
                     </div>
                     
                     <div class="info-item">
@@ -1154,107 +1184,249 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
                     
                     <div class="info-item">
                         <span class="info-label">Instituição</span>
-                        <span class="info-value"><?php echo htmlspecialchars($usuario['instituicao']); ?></span>
+                        <span class="info-value"><?php echo !empty($usuario['instituicao']) ? htmlspecialchars($usuario['instituicao']) : 'Não informado'; ?></span>
                     </div>
                     
                     <div class="info-item">
                         <span class="info-label">Data de Inscrição</span>
-                        <span class="info-value"><?php echo date('d/m/Y'); ?></span>
+                        <span class="info-value"><?php echo date('d/m/Y', strtotime($usuario['data_cadastro'])); ?></span>
                     </div>
                 </div>
                 
-                <!-- Alterar Senha -->
-                <h3 style="margin-top: 30px; color: var(--neon-green);">Alterar Senha</h3>
-                <?php if (isset($mensagem_senha)): ?>
-                <div class="message <?php echo $tipo_mensagem; ?>">
-                    <?php echo $mensagem_senha; ?>
-                </div>
-                <?php endif; ?>
-                
-                <form method="POST" action="">
-                    <div class="form-group">
-                        <label for="senha_atual">Senha Atual</label>
-                        <input type="password" id="senha_atual" name="senha_atual" required>
-                    </div>
+                <!-- Formulário de Edição -->
+                <div class="edit-form" id="editForm">
+                    <h3 style="color: var(--neon-green); margin-bottom: 20px;">Editar Dados Pessoais</h3>
                     
-                    <div class="form-group">
-                        <label for="nova_senha">Nova Senha</label>
-                        <input type="password" id="nova_senha" name="nova_senha" required>
-                    </div>
+                    <form id="formEditarDados">
+                        <div class="form-group">
+                            <label for="edit_nome">Nome Completo</label>
+                            <input type="text" id="edit_nome" name="nome" value="<?php echo htmlspecialchars($usuario['nome']); ?>" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit_email">E-mail</label>
+                            <input type="email" id="edit_email" name="email" value="<?php echo htmlspecialchars($usuario['email']); ?>" required>
+                        </div>
+                        
+                        <div class="form-group">
+                        	<label for="cpf" class="required">CPF</label>
+                        	<input type="text" id="cpf" name="cpf" required maxlength="14" value="<?php echo !empty($usuario['cpf']) ? htmlspecialchars($usuario['cpf']) : ''; ?>" disabled> * não pode ser editado
+                    	</div>
                     
-                    <div class="form-group">
-                        <label for="confirmar_senha">Confirmar Nova Senha</label>
-                        <input type="password" id="confirmar_senha" name="confirmar_senha" required>
-                    </div>
-                    
-                    <button type="submit" name="alterar_senha" class="btn-primary">Alterar Senha</button>
-                </form>
-                
-                </section>
-                
-                  <section class="user-info" id="dados">
-                      <h2 style="color: var(--neon-green); margin-bottom: 20px; font-size: 1.8rem;">Comprovante de Pagamento</h2>
-                
-                <div class="table-container">
-            
-                <!-- Comprovante de Pagamento -->
-                <div class="verification-status">
-                    <span class="status-icon"><i class="fas fa-check-circle status-approved"></i></span>
-                    <span>Centro Acadêmico: <strong>Aprovado</strong></span>
+                        <div class="form-group">
+                            <label for="edit_telefone">Telefone</label>
+                            <input type="text" id="edit_telefone" name="telefone" value="<?php echo !empty($usuario['telefone']) ? htmlspecialchars($usuario['telefone']) : ''; ?>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit_instituicao">Instituição</label>
+                            <input type="text" id="edit_instituicao" name="instituicao" value="<?php echo htmlspecialchars($usuario['instituicao']); ?>" required>
+                        </div>
+                        
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <i class="fas fa-key"></i> Alterar senha
+                        </button>
+                        
+                        <div class="password-fields" id="passwordFields">
+                            <div class="form-group">
+                                <label for="edit_senha_atual">Senha Atual</label>
+                                <input type="password" id="edit_senha_atual" name="senha_atual">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="edit_nova_senha">Nova Senha</label>
+                                <input type="password" id="edit_nova_senha" name="nova_senha">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="edit_confirmar_senha">Confirmar Nova Senha</label>
+                                <input type="password" id="edit_confirmar_senha" name="confirmar_senha">
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn-primary">Salvar Alterações</button>
+                            <button type="button" class="btn-primary" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" id="btnCancelEdit">Cancelar</button>
+                        </div>
+                    </form>
+                    <div id="messageEditarDados" style="margin-top: 15px;"></div>
                 </div>
-                
-                <div class="verification-status">
-                    <span class="status-icon"><i class="fas fa-check-circle status-approved"></i></span>
-                    <span>Coordenação: <strong>Aprovado</strong></span>
-                </div>
-                
-                <div class="file-upload" id="payment-upload">
-                    <input type="file" id="payment-file" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    <p>Clique para enviar ou arraste o comprovante PIX</p>
-                    <span>Formatos aceitos: PDF, JPG, PNG (até 5MB)</span>
-                    <div class="file-name" id="file-name"></div>
-                </div>
-                
-                <button type="button" id="submit-payment" class="btn-primary" style="margin-top: 15px; display: none;">Enviar Comprovante</button>
             </section>
+            
+            <!-- Comprovantes Section -->
+            <section id="comprovantes" style="margin-top: 40px;">
+                <h2 style="color: var(--neon-green); margin-bottom: 20px; font-size: 1.8rem;">Comprovantes PIX</h2>
+                
+                <div class="user-info">
+                    <h3>Enviar Comprovante</h3>
+                    <form id="formComprovante" method="POST" enctype="multipart/form-data">
+                        <div class="file-upload" id="fileUploadArea">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Clique para selecionar ou arraste um arquivo</p>
+                            <p>Aceitamos arquivos PDF, JPG, PNG ou GIF (até 5MB)</p>
+                            <input type="file" name="comprovante" id="comprovante" accept=".jpg,.jpeg,.png,.gif,.pdf" style="display: none;" required>
+                            <div id="fileName" class="file-name"></div>
+                        </div>
+                        
+                        <button type="submit" class="btn-primary">Enviar Comprovante</button>
+                    </form>
+                    <div id="messageComprovante"></div>
+                </div>
+                
+                <h3 style="color: var(--neon-green); margin: 30px 0 20px; font-size: 1.5rem;">Meus Comprovantes</h3>
+                <div id="comprovantesList">
+                    <?php if (count($comprovantes) > 0): ?>
+                        <?php foreach ($comprovantes as $comprovante): ?>
+                        <div class="comprovante-item">
+                            <div class="comprovante-info">
+                                <h4>Comprovante enviado em <?php echo date('d/m/Y H:i', strtotime($comprovante['data_envio'])); ?></h4>
+                                <div class="verification-status">
+                                    <span class="status-icon">
+                                        <?php if ($comprovante['status'] == 'aprovado'): ?>
+                                            <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+                                        <?php elseif ($comprovante['status'] == 'rejeitado'): ?>
+                                            <i class="fas fa-times-circle" style="color: var(--error-color);"></i>
+                                        <?php else: ?>
+                                            <i class="fas fa-clock" style="color: #ffc107;"></i>
+                                        <?php endif; ?>
+                                    </span>
+                                    <span>
+                                        Status: 
+                                        <?php if ($comprovante['status'] == 'aprovado'): ?>
+                                            <span class="verde">Aprovado</span>
+                                        <?php elseif ($comprovante['status'] == 'rejeitado'): ?>
+                                            <span class="vermelho">Rejeitado</span>
+                                            <?php if (!empty($comprovante['observacao'])): ?>
+                                                <br><small>Motivo: <?php echo htmlspecialchars($comprovante['observacao']); ?></small>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <span style="color: #ffc107;">Pendente</span>
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="comprovante-actions">
+                                <button class="btn-primary btn-view-comprovante" data-file="<?php echo $comprovante['arquivo']; ?>" data-type="<?php echo $comprovante['tipo_arquivo']; ?>">
+                                    <i class="fas fa-eye"></i> Visualizar
+                                </button>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="message">
+                            Você ainda não enviou nenhum comprovante.
+                        </div>
+                    <?php endif; ?>
+                </div>
             </section>
             
-            <!-- Oficinas Section -->
-            <section id="oficinas">
-                <h2 style="color: var(--neon-green); margin-bottom: 20px; font-size: 1.8rem;">Minhas Oficinas</h2>
+            <!-- Atividades Section -->
+            <section id="atividades" style="margin-top: 40px;">
+                <h2 style="color: var(--neon-green); margin-bottom: 20px; font-size: 1.8rem;">Atividades da TechWeek</h2>
                 
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Oficina</th>
-                                <th>Data</th>
-                                <th>Horário</th>
-                                <th>Local</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($oficinas)): ?>
-                                <?php foreach ($oficinas as $oficina): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($oficina['nome']); ?></td>
-                                        <td><?php echo date('d/m/Y', strtotime($oficina['data'])); ?></td>
-                                        <td><?php echo htmlspecialchars($oficina['horario']); ?></td>
-                                        <td><?php echo htmlspecialchars($oficina['local']); ?></td>
-                                        <td>
-                                            <span style="color: var(--neon-green);">Inscrito</span>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="5" style="text-align: center;">Você ainda não se inscreveu em nenhuma oficina.</td>
-                                </tr>
+                <div id="messageAtividade" style="margin-bottom: 20px;"></div>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="todas">Todas as Atividades</div>
+                    <div class="tab" data-tab="minhas">Minhas Inscrições</div>
+                </div>
+                
+                <div class="tab-content active" id="todas-atividades">
+                    <?php if (count($todas_atividades) > 0): ?>
+                        <?php foreach ($todas_atividades as $atividade): ?>
+                        <div class="atividade-card" id="atividade-<?php echo $atividade['id']; ?>">
+                            <div class="atividade-header">
+                                <h3 class="atividade-title"><?php echo htmlspecialchars($atividade['titulo']); ?></h3>
+                                <div class="atividade-vagas">
+                                    <?php echo $atividade['vagas']; ?> vagas
+                                </div>
+                            </div>
+                            
+                            <div class="atividade-meta">
+                                <div class="atividade-meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <?php echo $atividade['data']; ?>
+                                </div>
+                                <div class="atividade-meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    <?php echo $atividade['horario']; ?>
+                                </div>
+                                <div class="atividade-meta-item">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <?php echo htmlspecialchars($atividade['sala']); ?>
+                                </div>
+                            </div>
+                            
+                            <?php if (!empty($atividade['palestrante'])): ?>
+                            <div class="atividade-descricao">
+                                <strong>Palestrante:</strong> <?php echo htmlspecialchars($atividade['palestrante']); ?>
+                            </div>
                             <?php endif; ?>
-                        </tbody>
-                    </table>
+                            
+                            <div class="atividade-actions">
+                                <?php if (in_array($atividade['id'], $atividades_inscritas_ids)): ?>
+                                    <button class="btn-primary btn-cancelar-atividade" data-atividade-id="<?php echo $atividade['id']; ?>" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);">
+                                        <i class="fas fa-times"></i> Cancelar Inscrição
+                                    </button>
+                                <?php else: ?>
+                                    <button class="btn-primary btn-inscrever-atividade" data-atividade-id="<?php echo $atividade['id']; ?>">
+                                        <i class="fas fa-plus"></i> Inscrever-se
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="message">
+                            Não há atividades disponíveis no momento.
+                        </div>
+                    <?php endif; ?>
+                </div>
+                
+                <div class="tab-content" id="minhas-atividades">
+                    <?php if (count($atividades_inscritas) > 0): ?>
+                        <?php foreach ($atividades_inscritas as $atividade): ?>
+                        <div class="atividade-card">
+                            <div class="atividade-header">
+                                <h3 class="atividade-title"><?php echo htmlspecialchars($atividade['titulo']); ?></h3>
+                                <div class="atividade-vagas">
+                                    Inscrito
+                                </div>
+                            </div>
+                            
+                            <div class="atividade-meta">
+                                <div class="atividade-meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <?php echo $atividade['data']; ?>
+                                </div>
+                                <div class="atividade-meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    <?php echo $atividade['horario']; ?>
+                                </div>
+                                <div class="atividade-meta-item">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <?php echo htmlspecialchars($atividade['sala']); ?>
+                                </div>
+                            </div>
+                            
+                            <?php if (!empty($atividade['palestrante'])): ?>
+                            <div class="atividade-descricao">
+                                <strong>Palestrante:</strong> <?php echo htmlspecialchars($atividade['palestrante']); ?>
+                            </div>
+                            <?php endif; ?>
+                            
+                            <div class="atividade-actions">
+                                <button class="btn-primary btn-cancelar-atividade" data-atividade-id="<?php echo $atividade['id']; ?>" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);">
+                                    <i class="fas fa-times"></i> Cancelar Inscrição
+                                </button>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="message">
+                            Você ainda não se inscreveu em nenhuma atividade.
+                        </div>
+                    <?php endif; ?>
                 </div>
             </section>
             
@@ -1269,16 +1441,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
                     <button class="btn" style="opacity: 0.7; cursor: not-allowed;">Disponível em Breve</button>
                 </div>
             </section>
-           
         </div>
     </main>
+
+    <!-- Preview Modal -->
+    <div class="preview-modal" id="previewModal">
+        <div class="preview-content">
+            <button class="preview-close" id="previewClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <h3>Visualizar Comprovante</h3>
+            <div class="preview-body" id="previewBody">
+                <!-- Conteúdo será inserido via JavaScript -->
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer>
         <div class="container">
             <div class="footer-content">
                 <div class="footer-logo">
-                    <img src="imagens/logo.jpg" alt="Tech Week">
+                    <img src="imagens/logo.jpg" alt="Tech Week" class="footer-logo-dark">
+                    <img src="imagens/logo-light.jpg" alt="Tech Week" class="footer-logo-light">
                     <p style="color: var(--light-gray);">1ª TechWeek</p>
                     <p style="color: var(--tech-green); font-weight: 600; margin-top: 5px;">Semana Acadêmica de Tecnologia e Inovação</p>
                 </div>
@@ -1377,8 +1562,357 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
             });
         });
         
+        // Upload de comprovante
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('comprovante');
+        const fileName = document.getElementById('fileName');
+        const formComprovante = document.getElementById('formComprovante');
+        const messageComprovante = document.getElementById('messageComprovante');
+        
+        fileUploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                fileName.textContent = fileInput.files[0].name;
+            } else {
+                fileName.textContent = '';
+            }
+        });
+        
+        // Arrastar e soltar arquivo
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.style.borderColor = 'var(--neon-green)';
+            fileUploadArea.style.backgroundColor = 'rgba(0, 191, 99, 0.1)';
+        });
+        
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.style.borderColor = 'var(--border-color)';
+            fileUploadArea.style.backgroundColor = 'transparent';
+        });
+        
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.style.borderColor = 'var(--border-color)';
+            fileUploadArea.style.backgroundColor = 'transparent';
+            
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileName.textContent = e.dataTransfer.files[0].name;
+            }
+        });
+        
+        // Envio do formulário via AJAX
+        formComprovante.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('upload_comprovante.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    messageComprovante.innerHTML = `<div class="message sucesso">${data.message}</div>`;
+                    
+                    // Adicionar o novo comprovante à lista
+                    const comprovantesList = document.getElementById('comprovantesList');
+                    const comprovanteItem = document.createElement('div');
+                    comprovanteItem.className = 'comprovante-item';
+                    comprovanteItem.innerHTML = `
+                        <div class="comprovante-info">
+                            <h4>Comprovante enviado em ${new Date().toLocaleString('pt-BR')}</h4>
+                            <div class="verification-status">
+                                <span class="status-icon">
+                                    <i class="fas fa-clock" style="color: #ffc107;"></i>
+                                </span>
+                                <span>
+                                    Status: <span style="color: #ffc107;">Pendente</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="comprovante-actions">
+                            <button class="btn-primary btn-view-comprovante" data-file="${data.file_path}" data-type="${data.file_type}">
+                                <i class="fas fa-eye"></i> Visualizar
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Adicionar evento de visualização ao novo botão
+                    comprovanteItem.querySelector('.btn-view-comprovante').addEventListener('click', viewComprovanteHandler);
+                    
+                    // Adicionar à lista
+                    if (comprovantesList.querySelector('.message')) {
+                        comprovantesList.innerHTML = '';
+                    }
+                    comprovantesList.prepend(comprovanteItem);
+                    
+                    // Limpar o formulário
+                    formComprovante.reset();
+                    fileName.textContent = '';
+                } else {
+                    messageComprovante.innerHTML = `<div class="message erro">${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                messageComprovante.innerHTML = `<div class="message erro">Erro ao enviar comprovante: ${error}</div>`;
+            });
+        });
+        
+        // Visualizar comprovante
+        const previewModal = document.getElementById('previewModal');
+        const previewClose = document.getElementById('previewClose');
+        const previewBody = document.getElementById('previewBody');
+        
+        const viewComprovanteHandler = function() {
+            const file = this.getAttribute('data-file');
+            const type = this.getAttribute('data-type');
+            
+            previewBody.innerHTML = '';
+            
+            if (type === 'pdf') {
+                previewBody.innerHTML = `<iframe src="${file}"></iframe>`;
+            } else {
+                previewBody.innerHTML = `<img src="${file}" alt="Comprovante">`;
+            }
+            
+            previewModal.style.display = 'flex';
+        };
+        
+        // Adicionar evento a todos os botões de visualização
+        document.querySelectorAll('.btn-view-comprovante').forEach(button => {
+            button.addEventListener('click', viewComprovanteHandler);
+        });
+        
+        previewClose.addEventListener('click', () => {
+            previewModal.style.display = 'none';
+        });
+        
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) {
+                previewModal.style.display = 'none';
+            }
+        });
+        
+        // Tabs de atividades
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(`${tabId}-atividades`).classList.add('active');
+            });
+        });
+        
+        // Inscrição em atividades via AJAX
+        document.querySelectorAll('.btn-inscrever-atividade').forEach(button => {
+            button.addEventListener('click', function() {
+                const atividadeId = this.getAttribute('data-atividade-id');
+                const messageAtividade = document.getElementById('messageAtividade');
+                
+                fetch('inscrever_atividade.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `atividade_id=${atividadeId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        messageAtividade.innerHTML = `<div class="message sucesso">${data.message}</div>`;
+                        
+                        // Atualizar o botão
+                        this.innerHTML = '<i class="fas fa-times"></i> Cancelar Inscrição';
+                        this.classList.remove('btn-inscrever-atividade');
+                        this.classList.add('btn-cancelar-atividade');
+                        this.style.background = 'linear-gradient(45deg, var(--error-color), #ff6b6b)';
+                        
+                        // Adicionar evento de cancelamento
+                        this.addEventListener('click', cancelarInscricaoHandler);
+                        
+                        // Atualizar a aba "Minhas Inscrições"
+                        setTimeout(() => {
+                            document.querySelector('[data-tab="minhas"]').click();
+                        }, 1500);
+                    } else {
+                        messageAtividade.innerHTML = `<div class="message erro">${data.message}</div>`;
+                    }
+                    
+                    // Esconder a mensagem após 5 segundos
+                    setTimeout(() => {
+                        messageAtividade.innerHTML = '';
+                    }, 5000);
+                })
+                .catch(error => {
+                    messageAtividade.innerHTML = `<div class="message erro">Erro: ${error}</div>`;
+                });
+            });
+        });
+        
+        // Cancelamento de inscrição via AJAX
+        const cancelarInscricaoHandler = function() {
+            const atividadeId = this.getAttribute('data-atividade-id');
+            const messageAtividade = document.getElementById('messageAtividade');
+            
+            fetch('cancelar_inscricao.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `atividade_id=${atividadeId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    messageAtividade.innerHTML = `<div class="message sucesso">${data.message}</div>`;
+                    
+                    // Atualizar o botão
+                    this.innerHTML = '<i class="fas fa-plus"></i> Inscrever-se';
+                    this.classList.remove('btn-cancelar-atividade');
+                    this.classList.add('btn-inscrever-atividade');
+                    this.style.background = '';
+                    
+                    // Remover evento de cancelamento e adicionar de inscrição
+                    this.removeEventListener('click', cancelarInscricaoHandler);
+                    this.addEventListener('click', function() {
+                        // Recarregar a página para atualizar a lista
+                        location.reload();
+                    });
+                    
+                    // Atualizar a aba "Minhas Inscrições"
+                    setTimeout(() => {
+                        document.querySelector('[data-tab="minhas"]').click();
+                    }, 1500);
+                } else {
+                    messageAtividade.innerHTML = `<div class="message erro">${data.message}</div>`;
+                }
+                
+                // Esconder a mensagem após 5 segundos
+                setTimeout(() => {
+                    messageAtividade.innerHTML = '';
+                }, 5000);
+            })
+            .catch(error => {
+                messageAtividade.innerHTML = `<div class="message erro">Erro: ${error}</div>`;
+            });
+        };
+        
+        // Adicionar evento de cancelamento aos botões existentes
+        document.querySelectorAll('.btn-cancelar-atividade').forEach(button => {
+            button.addEventListener('click', cancelarInscricaoHandler);
+        });
+        
+        // Edição de dados do usuário
+        const btnEditDados = document.getElementById('btnEditDados');
+        const editForm = document.getElementById('editForm');
+        const btnCancelEdit = document.getElementById('btnCancelEdit');
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordFields = document.getElementById('passwordFields');
+        const formEditarDados = document.getElementById('formEditarDados');
+        const messageEditarDados = document.getElementById('messageEditarDados');
+        
+        btnEditDados.addEventListener('click', () => {
+            editForm.style.display = 'block';
+            btnEditDados.style.display = 'none';
+        });
+        
+        btnCancelEdit.addEventListener('click', () => {
+            editForm.style.display = 'none';
+            btnEditDados.style.display = 'block';
+            passwordFields.style.display = 'none';
+        });
+        
+        togglePassword.addEventListener('click', () => {
+            if (passwordFields.style.display === 'none' || passwordFields.style.display === '') {
+                passwordFields.style.display = 'block';
+            } else {
+                passwordFields.style.display = 'none';
+            }
+        });
+        
+        formEditarDados.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('editar_dados.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    messageEditarDados.innerHTML = `<div class="message sucesso">${data.message}</div>`;
+                    
+                    // Atualizar os dados exibidos
+                    document.querySelector('.info-value:nth-child(1)').textContent = document.getElementById('edit_nome').value;
+                    document.querySelector('.info-value:nth-child(2)').textContent = document.getElementById('edit_email').value;
+                    document.querySelector('.info-value:nth-child(4)').textContent = document.getElementById('edit_telefone').value || 'Não informado';
+                    document.querySelector('.info-value:nth-child(5)').textContent = document.getElementById('edit_instituicao').value;
+                    
+                    // Esconder o formulário após 2 segundos
+                    setTimeout(() => {
+                        editForm.style.display = 'none';
+                        btnEditDados.style.display = 'block';
+                        passwordFields.style.display = 'none';
+                        messageEditarDados.innerHTML = '';
+                    }, 2000);
+                } else {
+                    messageEditarDados.innerHTML = `<div class="message erro">${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                messageEditarDados.innerHTML = `<div class="message erro">Erro: ${error}</div>`;
+            });
+        });
+        
+        // Formatação de CPF
+        const cpfInput = document.getElementById('cpf');
+        cpfInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if(value.length > 11) value = value.slice(0, 11);
+            
+            if(value.length > 9) {
+                value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            } else if(value.length > 6) {
+                value = value.replace(/(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
+            } else if(value.length > 3) {
+                value = value.replace(/(\d{3})(\d+)/, '$1.$2');
+            }
+            
+            e.target.value = value;
+        });
+        
+        // Formatação de telefone
+        const telefoneInput = document.getElementById('edit_telefone');
+        telefoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if(value.length > 11) value = value.slice(0, 11);
+            
+            if(value.length > 10) {
+                value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+            } else if(value.length > 6) {
+                value = value.replace(/(\d{2})(\d{4})(\d+)/, '($1) $2-$3');
+            } else if(value.length > 2) {
+                value = value.replace(/(\d{2})(\d+)/, '($1) $2');
+            } else if(value.length > 0) {
+                value = value.replace(/(\d+)/, '($1');
+            }
+            
+            e.target.value = value;
+        });
 
-       
     </script>
 </body>
 </html>
