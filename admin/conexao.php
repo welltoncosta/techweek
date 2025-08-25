@@ -3,7 +3,7 @@
 
 // Configurações de conexão com o banco de dados
 $host = 'localhost';
-$dbname = 'techweek';
+$dbname = 'tw_2025';
 $username = 'usuario';
 $password = '123';
 
@@ -40,7 +40,6 @@ if ($_SERVER['SERVER_NAME'] === 'localhost' || $_SERVER['SERVER_ADDR'] === '127.
     ini_set('display_startup_errors', 0);
     error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
 }
-
 // Retornar a conexão para ser usada em outros arquivos
 return $pdo;
 ?>	
