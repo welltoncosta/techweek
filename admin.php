@@ -10,6 +10,242 @@ if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']) || $_SESSION['us
 // Incluir arquivo de conexão
 include("conexao.php");
 
+// Processar ações do formulário
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $response = ['success' => false, 'message' => 'Ação não reconhecida'];
+    
+    // Verificar token CSRF (simplificado para este exemplo)
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $response['message'] = 'Token de segurança inválido';
+        echo json_encode($response);
+        exit;
+    }
+    
+    // Ação: Editar participante
+    if (isset($_POST['action']) && $_POST['action'] === 'editar_participante') {
+        $id = $_POST['id'];
+        $nome = $_POST['nome'];
+        $email = $_POST['email'];
+        $cpf = $_POST['cpf'];
+        $telefone = $_POST['telefone'];
+        $instituicao = $_POST['instituicao'];
+        $tipo = $_POST['tipo'];
+        
+        try {
+            $stmt = $pdo->prepare("UPDATE participantes SET nome = :nome, email = :email, cpf = :cpf, telefone = :telefone, instituicao = :instituicao, tipo = :tipo WHERE id = :id");
+            $stmt->execute([
+                ':nome' => $nome,
+                ':email' => $email,
+                ':cpf' => $cpf,
+                ':telefone' => $telefone,
+                ':instituicao' => $instituicao,
+                ':tipo' => $tipo,
+                ':id' => $id
+            ]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Participante atualizado com sucesso';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao atualizar participante: ' . $e->getMessage();
+        }
+    }
+    
+    // Ação: Alternar status de administrador
+    if (isset($_POST['action']) && $_POST['action'] === 'toggle_admin') {
+        $id = $_POST['id'];
+        $administrador = $_POST['administrador'] ? 1 : 0;
+        
+        try {
+            $stmt = $pdo->prepare("UPDATE participantes SET administrador = :administrador WHERE id = :id");
+            $stmt->execute([
+                ':administrador' => $administrador,
+                ':id' => $id
+            ]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Status de administrador atualizado';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao atualizar status: ' . $e->getMessage();
+        }
+    }
+    
+    // Ação: Cadastrar atividade
+    if (isset($_POST['action']) && $_POST['action'] === 'cadastrar_atividade') {
+        $titulo = $_POST['titulo'];
+        $tipo = $_POST['tipo'];
+        $palestrante = $_POST['palestrante'];
+        $local = $_POST['local'];
+        $data = $_POST['data'];
+        $hora_inicio = $_POST['hora_inicio'];
+        $hora_fim = $_POST['hora_fim'];
+        $vagas = $_POST['vagas'];
+        
+        try {
+            $stmt = $pdo->prepare("INSERT INTO atividades (titulo, tipo, palestrante, sala, data, horario, hora_inicio, hora_fim, vagas, ativa) VALUES (:titulo, :tipo, :palestrante, :sala, :data, :horario, :hora_inicio, :hora_fim, :vagas, 1)");
+            $stmt->execute([
+                ':titulo' => $titulo,
+                ':tipo' => $tipo,
+                ':palestrante' => $palestrante,
+                ':sala' => $local,
+                ':data' => $data,
+                ':horario' => $hora_inicio . ' - ' . $hora_fim,
+                ':hora_inicio' => $hora_inicio,
+                ':hora_fim' => $hora_fim,
+                ':vagas' => $vagas
+            ]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Atividade cadastrada com sucesso';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao cadastrar atividade: ' . $e->getMessage();
+        }
+    }
+    
+    // Ação: Editar atividade
+    if (isset($_POST['action']) && $_POST['action'] === 'editar_atividade') {
+        $id = $_POST['id'];
+        $titulo = $_POST['titulo'];
+        $tipo = $_POST['tipo'];
+        $palestrante = $_POST['palestrante'];
+        $local = $_POST['local'];
+        $data = $_POST['data'];
+        $hora_inicio = $_POST['hora_inicio'];
+        $hora_fim = $_POST['hora_fim'];
+        $vagas = $_POST['vagas'];
+        
+        try {
+            $stmt = $pdo->prepare("UPDATE atividades SET titulo = :titulo, tipo = :tipo, palestrante = :palestrante, sala = :sala, data = :data, horario = :horario, hora_inicio = :hora_inicio, hora_fim = :hora_fim, vagas = :vagas WHERE id = :id");
+            $stmt->execute([
+                ':titulo' => $titulo,
+                ':tipo' => $tipo,
+                ':palestrante' => $palestrante,
+                ':sala' => $local,
+                ':data' => $data,
+                ':horario' => $hora_inicio . ' - ' . $hora_fim,
+                ':hora_inicio' => $hora_inicio,
+                ':hora_fim' => $hora_fim,
+                ':vagas' => $vagas,
+                ':id' => $id
+            ]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Atividade atualizada com sucesso';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao atualizar atividade: ' . $e->getMessage();
+        }
+    }
+    
+    // Ação: Registrar presença
+    if (isset($_POST['action']) && $_POST['action'] === 'registrar_presenca') {
+        $atividade_id = $_POST['atividade_id'];
+        $codigo_barras = $_POST['codigo_barras'];
+        
+        try {
+            // Buscar participante pelo código de barras
+            $stmt = $pdo->prepare("SELECT id FROM participantes WHERE codigo_barra = :codigo_barra");
+            $stmt->execute([':codigo_barra' => $codigo_barras]);
+            $participante = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($participante) {
+                $participante_id = $participante['id'];
+                
+                // Verificar se já registrou presença
+                $stmt = $pdo->prepare("SELECT id FROM presencas WHERE id_participante = :participante_id AND id_atividade = :atividade_id");
+                $stmt->execute([
+                    ':participante_id' => $participante_id,
+                    ':atividade_id' => $atividade_id
+                ]);
+                
+                if ($stmt->rowCount() === 0) {
+                    // Registrar presença
+                    $stmt = $pdo->prepare("INSERT INTO presencas (id_participante, id_atividade, data_hora) VALUES (:participante_id, :atividade_id, NOW())");
+                    $stmt->execute([
+                        ':participante_id' => $participante_id,
+                        ':atividade_id' => $atividade_id
+                    ]);
+                    
+                    $response['success'] = true;
+                    $response['message'] = 'Presença registrada com sucesso';
+                } else {
+                    $response['message'] = 'Presença já registrada anteriormente';
+                }
+            } else {
+                $response['message'] = 'Participante não encontrado com este código de barras';
+            }
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao registrar presença: ' . $e->getMessage();
+        }
+    }
+    
+    // Ação: Validar pagamento
+    if (isset($_POST['action']) && $_POST['action'] === 'validar_pagamento') {
+        $id = $_POST['id'];
+        $tipo = $_POST['tipo'];
+        $aprovado = $_POST['aprovado'];
+        
+        try {
+            $status = $aprovado ? 'aprovado' : 'rejeitado';
+            $stmt = $pdo->prepare("UPDATE comprovantes SET status = :status, data_avaliacao = NOW() WHERE id = :id");
+            $stmt->execute([
+                ':status' => $status,
+                ':id' => $id
+            ]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Pagamento validado com sucesso';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao validar pagamento: ' . $e->getMessage();
+        }
+    }
+    
+    // Ação: Buscar participante
+    if (isset($_POST['action']) && $_POST['action'] === 'buscar_participante') {
+        $id = $_POST['id'];
+        
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM participantes WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $participante = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($participante) {
+                $response['success'] = true;
+                $response['participante'] = $participante;
+            } else {
+                $response['message'] = 'Participante não encontrado';
+            }
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao buscar participante: ' . $e->getMessage();
+        }
+    }
+    
+    // Ação: Buscar atividade
+    if (isset($_POST['action']) && $_POST['action'] === 'buscar_atividade') {
+        $id = $_POST['id'];
+        
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM atividades WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $atividade = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($atividade) {
+                $response['success'] = true;
+                $response['atividade'] = $atividade;
+            } else {
+                $response['message'] = 'Atividade não encontrada';
+            }
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao buscar atividade: ' . $e->getMessage();
+        }
+    }
+    
+    // Se for uma requisição AJAX, retornar JSON
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    }
+}
+
 // Gerar token CSRF
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -95,8 +331,12 @@ function formatarDataHora($dataHora) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Administração - 1ª TechWeek</title>
+    <link rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2300FF00' d='M13 2.03v2.02c4.39.54 7.5 4.53 6.96 8.92c-.46 3.64-3.32 6.53-6.96 6.96v2c5.5-.55 9.5-5.43 8.95-10.93c-.45-4.75-4.22-8.5-8.95-8.97m-2 .03c-1.95.19-3.81.94-5.33 2.2L7.1 5.74c1.12-.9 2.47-1.48 3.9-1.68v-2M4.26 5.67A9.885 9.885 0 0 0 2.05 11h2c.19-1.42.75-2.77 1.64-3.9L4.26 5.67M2.06 13c.2 1.96.97 3.81 2.21 5.33l1.42-1.43A8.002 8.002 0 0 1 4.06 13h-2m5.04 5.37l-1.43 1.37A9.994 9.994 0 0 0 11 22v-2a8.002 8.002 0 0 1-3.9-1.63m9.33-12.37l-1.59 1.59L16 10l-4-4V3l-1 1l4 4l.47-.53l-1.53-1.53l1.59-1.59l.94.94z'/%3E%3C/svg%3E" type="image/svg+xml">
+
     <link href='https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         :root {
             --black: #000000;
@@ -522,6 +762,7 @@ function formatarDataHora($dataHora) {
             transform: translateY(-50%);
             color: var(--input-icon-color);
             pointer-events: none;
+            z-index: 2;
         }
         
         .input-with-icon input {
@@ -1030,6 +1271,40 @@ function formatarDataHora($dataHora) {
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Flatpickr Custom Styles */
+        .flatpickr-calendar {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0 15px rgba(0, 191, 99, 0.2);
+        }
+        
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange, .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus, .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay {
+            background: var(--tech-green);
+            border-color: var(--tech-green);
+        }
+        
+        .flatpickr-day.today {
+            border-color: var(--tech-green);
+        }
+        
+        .flatpickr-day.today:hover, .flatpickr-day.today:focus {
+            background: var(--tech-green);
+            border-color: var(--tech-green);
+        }
+        
+        .flatpickr-time input, .flatpickr-time .flatpickr-am-pm {
+            color: var(--text-color);
+        }
+        
+        .flatpickr-time .numInputWrapper span.arrowUp:after {
+            border-bottom-color: var(--text-color);
+        }
+        
+        .flatpickr-time .numInputWrapper span.arrowDown:after {
+            border-top-color: var(--text-color);
+        }
     </style>
 </head>
 <body>
@@ -1052,7 +1327,6 @@ function formatarDataHora($dataHora) {
                     <li><a href="#atividades" class="admin-nav" data-section="atividades">Atividades</a></li>
                     <li><a href="#presencas" class="admin-nav" data-section="presencas">Presenças</a></li>
                     <li><a href="#comprovantes" class="admin-nav" data-section="comprovantes">Comprovantes</a></li>
-                    <!--li><a href="#relatorios" class="admin-nav" data-section="relatorios">Relatórios</a></li-->
                 </ul>
 
                 <div class="header-controls">
@@ -1089,7 +1363,6 @@ function formatarDataHora($dataHora) {
                 <li><a href="#atividades" class="admin-nav" data-section="atividades">Atividades</a></li>
                 <li><a href="#presencas" class="admin-nav" data-section="presencas">Presenças</a></li>
                 <li><a href="#comprovantes" class="admin-nav" data-section="comprovantes">Comprovantes</a></li>
-                <!--li><a href="#relatorios" class="admin-nav" data-section="relatorios">Relatórios</a></li-->
             </ul>
         </div>
         
@@ -1279,21 +1552,21 @@ function formatarDataHora($dataHora) {
                         <div class="form-group">
                             <label for="data">Data</label>
                             <div class="input-with-icon">
-                                <input type="text" id="data" name="data" placeholder="dd/mm/aaaa" required pattern="\d{2}/\d{2}/\d{4}">
+                                <input type="text" id="data" name="data" placeholder="dd/mm/aaaa" required readonly>
                                 <i class="fas fa-calendar-alt"></i>
                             </div>
                         </div>
                         <div class="form-group">
                             <label for="hora_inicio">Hora Início</label>
                             <div class="input-with-icon">
-                                <input type="time" id="hora_inicio" name="hora_inicio" required step="1">
+                                <input type="text" id="hora_inicio" name="hora_inicio" required readonly>
                                 <i class="fas fa-clock"></i>
                             </div>
                         </div>
                         <div class="form-group">
                             <label for="hora_fim">Hora Fim</label>
                             <div class="input-with-icon">
-                                <input type="time" id="hora_fim" name="hora_fim" required step="1">
+                                <input type="text" id="hora_fim" name="hora_fim" required readonly>
                                 <i class="fas fa-clock"></i>
                             </div>
                         </div>
@@ -1364,6 +1637,7 @@ function formatarDataHora($dataHora) {
                             <div class="form-group">
                                 <label for="edit-tipo">Tipo</label>
                                 <select id="edit-tipo" name="tipo" required>
+                                    <option value="credenciamento">Recepção e Credenciamento</option>
                                     <option value="palestra">Palestra</option>
                                     <option value="workshop">Workshop</option>
                                     <option value="oficina">Oficina</option>
@@ -1381,21 +1655,21 @@ function formatarDataHora($dataHora) {
                             <div class="form-group">
                                 <label for="edit-data">Data</label>
                                 <div class="input-with-icon">
-                                    <input type="text" id="edit-data" name="data" placeholder="dd/mm/aaaa" required pattern="\d{2}/\d{2}/\d{4}">
+                                    <input type="text" id="edit-data" name="data" placeholder="dd/mm/aaaa" required readonly>
                                     <i class="fas fa-calendar-alt"></i>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="edit-hora_inicio">Hora Início</label>
                                 <div class="input-with-icon">
-                                    <input type="time" id="edit-hora_inicio" name="hora_inicio" required step="1">
+                                    <input type="text" id="edit-hora_inicio" name="hora_inicio" required readonly>
                                     <i class="fas fa-clock"></i>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="edit-hora_fim">Hora Fim</label>
                                 <div class="input-with-icon">
-                                    <input type="time" id="edit-hora_fim" name="hora_fim" required step="1">
+                                    <input type="text" id="edit-hora_fim" name="hora_fim" required readonly>
                                     <i class="fas fa-clock"></i>
                                 </div>
                             </div>
@@ -1519,77 +1793,6 @@ function formatarDataHora($dataHora) {
                     </div>
                 </div>
             </section>
-            
-            <!-- Seção de Relatórios -->
-            <section id="relatorios-section" class="admin-section">
-                <h2>Relatórios</h2>
-                
-                <div class="dashboard-cards">
-                    <div class="dashboard-card">
-                        <i class="fas fa-users"></i>
-                        <h3>Total de Participantes</h3>
-                        <p><?php echo $total_participantes; ?></p>
-                    </div>
-                    
-                    <div class="dashboard-card">
-                        <i class="fas fa-calendar-alt"></i>
-                        <h3>Total de Atividades</h3>
-                        <p><?php echo $total_atividades; ?></p>
-                    </div>
-                    
-                    <div class="dashboard-card">
-                        <i class="fas fa-check-circle"></i>
-                        <h3>Presenças Confirmadas</h3>
-                        <p><?php echo $total_presencas; ?></p>
-                    </div>
-                    
-                    <div class="dashboard-card">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <h3>Comprovantes Pendentes</h3>
-                        <p><?php echo $comprovantes_pendentes; ?></p>
-                    </div>
-                </div>
-                
-                <div class="table-container">
-                    <h3>Participantes por Tipo</h3>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Tipo</th>
-                                <th>Quantidade</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($participantes_por_tipo as $tipo): ?>
-                            <tr>
-                                <td><span class="badge badge-participante"><?php echo ucfirst($tipo['tipo']); ?></span></td>
-                                <td><?php echo $tipo['quantidade']; ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="table-container">
-                    <h3>Atividades por Tipo</h3>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Tipo</th>
-                                <th>Quantidade</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($atividades_por_tipo as $tipo): ?>
-                            <tr>
-                                <td><?php echo ucfirst($tipo['tipo']); ?></td>
-                                <td><?php echo $tipo['quantidade']; ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
         </div>
     </div>
 
@@ -1613,7 +1816,46 @@ function formatarDataHora($dataHora) {
         </div>
     </footer>
 
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
     <script>
+        // Inicializar Flatpickr para campos de data e hora
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configuração para o formulário de cadastro
+            flatpickr("#data", {
+                dateFormat: "d/m/Y",
+                locale: "pt",
+                allowInput: false,
+                clickOpens: true,
+                theme: "material" // Tema que se adapta ao modo claro/escuro
+            });
+            
+            flatpickr("#hora_inicio", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                locale: "pt",
+                allowInput: false,
+                clickOpens: true,
+                minuteIncrement: 1
+            });
+            
+            flatpickr("#hora_fim", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                locale: "pt",
+                allowInput: false,
+                clickOpens: true,
+                minuteIncrement: 1
+            });
+            
+            // Configuração para o formulário de edição (será inicializado quando o modal for aberto)
+        });
+        
         // Navegação do painel de admin com histórico
         document.querySelectorAll('.admin-nav').forEach(link => {
             link.addEventListener('click', function(e) {
@@ -1752,34 +1994,6 @@ function formatarDataHora($dataHora) {
                 if (footerLogoDark) footerLogoDark.style.display = 'block';
                 if (footerLogoLight) footerLogoLight.style.display = 'none';
             }
-        });
-        
-        // Formatação de data no formato dd/mm/yyyy
-        document.getElementById('data').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 8) {
-                value = value.slice(0, 8);
-            }
-            if (value.length > 4) {
-                value = value.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
-            } else if (value.length > 2) {
-                value = value.replace(/(\d{2})(\d{2})/, '$1/$2/');
-            }
-            e.target.value = value;
-        });
-
-        // Formatação de data no formato dd/mm/yyyy para o campo de edição
-        document.getElementById('edit-data').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 8) {
-                value = value.slice(0, 8);
-            }
-            if (value.length > 4) {
-                value = value.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
-            } else if (value.length > 2) {
-                value = value.replace(/(\d{2})(\d{2})/, '$1/$2/');
-            }
-            e.target.value = value;
         });
         
         // Editar participante
@@ -1934,12 +2148,42 @@ function formatarDataHora($dataHora) {
                         document.getElementById('edit-data').value = data.atividade.data;
                     }
                     
-                    // Separar horário de início e fim
-                    const horarioParts = data.atividade.horario.split(' - ');
-                    document.getElementById('edit-hora_inicio').value = horarioParts[0];
-                    document.getElementById('edit-hora_fim').value = horarioParts[1] || '';
-                    
+                    document.getElementById('edit-hora_inicio').value = data.atividade.hora_inicio;
+                    document.getElementById('edit-hora_fim').value = data.atividade.hora_fim;
                     document.getElementById('edit-vagas').value = data.atividade.vagas;
+                    
+                    // Inicializar Flatpickr para os campos de edição
+                    flatpickr("#edit-data", {
+                        dateFormat: "d/m/Y",
+                        locale: "pt",
+                        allowInput: false,
+                        clickOpens: true,
+                        defaultDate: document.getElementById('edit-data').value
+                    });
+                    
+                    flatpickr("#edit-hora_inicio", {
+                        enableTime: true,
+                        noCalendar: true,
+                        dateFormat: "H:i",
+                        time_24hr: true,
+                        locale: "pt",
+                        allowInput: false,
+                        clickOpens: true,
+                        minuteIncrement: 1,
+                        defaultDate: document.getElementById('edit-hora_inicio').value
+                    });
+                    
+                    flatpickr("#edit-hora_fim", {
+                        enableTime: true,
+                        noCalendar: true,
+                        dateFormat: "H:i",
+                        time_24hr: true,
+                        locale: "pt",
+                        allowInput: false,
+                        clickOpens: true,
+                        minuteIncrement: 1,
+                        defaultDate: document.getElementById('edit-hora_fim').value
+                    });
                     
                     abrirModal('editar-atividade-modal');
                 } else {
