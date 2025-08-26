@@ -220,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         try {
             // Buscar participante pelo código de barras
-            $stmt = $pdo->prepare("SELECT id FROM participantes WHERE codigo_barra = :codigo_barra");
+            $stmt = $pdo->prepare("SELECT * FROM participantes WHERE codigo_barra = :codigo_barra");
             $stmt->execute([':codigo_barra' => $codigo_barras]);
             $participante = $stmt->fetch(PDO::FETCH_ASSOC);
             
