@@ -1145,17 +1145,20 @@
         </div>
     </div>
 
-    <!-- Programação -->
+       <!-- Programação -->
     <section id="programacao" style="background: rgba(0, 0, 0, 0.7);">
         <div class="container">
-            
             <div class="programacao-table-container">
-            <div class="section-title">
-                <h2>Programação Completa</h2>
-                <p>Confira todas as atividades e palestras que acontecerão durante o evento</p>
-            </div>
-            
-                <table class="programacao-table">
+                <div class="section-title">
+                    <h2>Programação Completa</h2>
+                    <p>Confira todas as atividades e palestras que acontecerão durante o evento</p>
+                </div>
+                
+                <div id="programacao-loading" style="text-align: center; color: white; padding: 40px;">
+                    Carregando programação...
+                </div>
+                
+                <table class="programacao-table" id="tabela-programacao" style="display: none;">
                     <thead>
                         <tr>
                             <th>Data</th>
@@ -1165,107 +1168,23 @@
                             <th>Vagas</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>28/10 (Ter)</td>
-                            <td>18h40</td>
-                            <td>Credenciamento e Welcome Coffee</td>
-                            <td>Hall Principal - UTFPR</td>
-                            <td>-</td>
-                        </tr>
-                        <tr>
-                            <td>28/10 (Ter)</td>
-                            <td>19h30</td>
-                            <td class="event-highlight">Cerimônia de Abertura Oficial</td>
-                            <td>Auditório Central - UTFPR</td>
-                            <td>200</td>
-                        </tr>
-                        <tr>
-                            <td>28/10 (Ter)</td>
-                            <td>20h15 - 22h00</td>
-                            <td class="event-highlight">Palestra Magna: Inovação e Tecnologia no Google
-                                <div class="event-detail">Palestrante: Representante do Google</div>
-                            </td>
-                            <td>Auditório Central - UTFPR</td>
-                            <td>200</td>
-                        </tr>
-                        <tr>
-                            <td>29/10 (Qua)</td>
-                            <td>14h00 - 17h00</td>
-                            <td>Workshop: Desenvolvimento Web com React Avançado
-                                <div class="event-detail">Com foco em hooks avançados e performance</div>
-                            </td>
-                            <td>Sala Q204 - UTFPR</td>
-                            <td>30</td>
-                        </tr>
-                        <tr>
-                            <td>29/10 (Qua)</td>
-                            <td>19h30 - 22h00</td>
-                            <td>Painel: Carreiras em Tecnologia - Oportunidades e Desafios
-                                <div class="event-detail">Com representantes de grandes empresas de TI</div>
-                            </td>
-                            <td>Auditório Central - UTFPR</td>
-                            <td>180</td>
-                        </tr>
-                        <tr>
-                            <td>30/10 (Qui)</td>
-                            <td>09h00 - 12h00</td>
-                            <td>Minicurso: Introdução à Inteligência Artificial
-                                <div class="event-detail">Conceitos básicos e aplicações práticas</div>
-                            </td>
-                            <td>Laboratório L302 - UTFPR</td>
-                            <td>25</td>
-                        </tr>
-                        <tr>
-                            <td>30/10 (Qui)</td>
-                            <td>14h00 - 17h00</td>
-                            <td>Workshop: UX/UI Design para aplicações modernas
-                                <div class="event-detail">Princípios de design e ferramentas atuais</div>
-                            </td>
-                            <td>Sala Q205 - UTFPR</td>
-                            <td>25</td>
-                        </tr>
-                        <tr>
-                            <td>30/10 (Qui)</td>
-                            <td>19h30 - 22h00</td>
-                            <td class="event-highlight">Competição de Hackathon TechWeek
-                                <div class="event-detail">Desafio de desenvolvimento com premiação</div>
-                            </td>
-                            <td>Salas Q207-Q210 - UTFPR</td>
-                            <td>15 equipes</td>
-                        </tr>
-                        <tr>
-                            <td>31/10 (Sex)</td>
-                            <td>09h00 - 12h00</td>
-                            <td>Workshop: Introdução à Blockchain e Criptomoedas
-                                <div class="event-detail">Fundamentos e aplicações práticas</div>
-                            </td>
-                            <td>Sala Q203 - UTFPR</td>
-                            <td>30</td>
-                        </tr>
-                        <tr>
-                            <td>31/10 (Sex)</td>
-                            <td>14h00 - 17h00</td>
-                            <td>Workshop: Segurança Cibernética para Iniciantes
-                                <div class="event-detail">Princípios de segurança e proteção de dados</div>
-                            </td>
-                            <td>Sala Q202 - UTFPR</td>
-                            <td>30</td>
-                        </tr>
-                        <tr>
-                            <td>31/10 (Sex)</td>
-                            <td>19h30 - 22h00</td>
-                            <td class="event-highlight">Palestra de Encerramento: Tecnologia de Drones na Segurança Pública
-                                <div class="event-detail">Aplicações modernas na polícia penal</div>
-                            </td>
-                            <td>Teatro Municipal Espaço da Arte</td>
-                            <td>300</td>
-                        </tr>
+                    <tbody id="corpo-tabela-programacao">
+                        <!-- As atividades serão inseridas aqui via JavaScript -->
                     </tbody>
                 </table>
+                
+                <div id="programacao-vazia" style="text-align: center; color: white; padding: 40px; display: none;">
+                    Nenhuma atividade cadastrada ainda. Em breve divulgaremos nossa programação.
+                </div>
+                
+                <div id="programacao-erro" style="text-align: center; color: white; padding: 40px; display: none;">
+                    Erro ao carregar a programação.
+                </div>
             </div>
         </div>
     </section>
+
+
 
     <!-- Sobre -->
     <section id="sobre">
@@ -1730,7 +1649,7 @@
                         if (result.redirect) {
                             window.location.href = result.redirect;
                         }
-                    }, 1500);
+                    }, 500);
                 } else {
                     messageContainer.innerHTML = `<div class="alert alert-error">${result.message}</div>`;
                 }
@@ -1884,6 +1803,80 @@
                 }
             });
         });
+    
+    // Função para carregar a programação via AJAX
+    function carregarProgramacao() {
+        fetch('api_atividades.php')
+            .then(response => response.json())
+            .then(data => {
+                // Esconder o indicador de carregamento
+                document.getElementById('programacao-loading').style.display = 'none';
+                
+                if (data.success) {
+                    if (data.atividades.length > 0) {
+                        // Mostrar a tabela
+                        document.getElementById('tabela-programacao').style.display = 'table';
+                        
+                        // Preencher a tabela com os dados
+                        const corpoTabela = document.getElementById('corpo-tabela-programacao');
+                        corpoTabela.innerHTML = ''; // Limpar conteúdo anterior
+                        
+                        data.atividades.forEach(atividade => {
+                            const linha = document.createElement('tr');
+                            
+                            // Coluna Data
+                            const tdData = document.createElement('td');
+                            tdData.textContent = `${atividade.dataFormatada} (${atividade.diaSemana})`;
+                            linha.appendChild(tdData);
+                            
+                            // Coluna Horário
+                            const tdHorario = document.createElement('td');
+                            tdHorario.textContent = atividade.horario;
+                            linha.appendChild(tdHorario);
+                            
+                            // Coluna Atividade
+                            const tdAtividade = document.createElement('td');
+                            if (atividade.destaque) {
+                                tdAtividade.className = 'event-highlight';
+                            }
+                            tdAtividade.innerHTML = `
+                                ${atividade.titulo}
+                                <div class="event-detail">Palestrante: ${atividade.palestrante}</div>
+                            `;
+                            linha.appendChild(tdAtividade);
+                            
+                            // Coluna Local
+                            const tdLocal = document.createElement('td');
+                            tdLocal.textContent = atividade.sala;
+                            linha.appendChild(tdLocal);
+                            
+                            // Coluna Vagas
+                            const tdVagas = document.createElement('td');
+                            tdVagas.textContent = atividade.vagas;
+                            linha.appendChild(tdVagas);
+                            
+                            corpoTabela.appendChild(linha);
+                        });
+                    } else {
+                        // Mostrar mensagem de programação vazia
+                        document.getElementById('programacao-vazia').style.display = 'block';
+                    }
+                } else {
+                    // Mostrar mensagem de erro
+                    document.getElementById('programacao-erro').style.display = 'block';
+                    console.error('Erro ao carregar programação:', data.message);
+                }
+            })
+            .catch(error => {
+                // Esconder o indicador de carregamento e mostrar erro
+                document.getElementById('programacao-loading').style.display = 'none';
+                document.getElementById('programacao-erro').style.display = 'block';
+                console.error('Erro na requisição:', error);
+            });
+    }
+    
+    // Carregar a programação quando a página estiver pronta
+    document.addEventListener('DOMContentLoaded', carregarProgramacao);
     </script>
 </body>
 </html>

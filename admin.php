@@ -113,6 +113,7 @@ function formatarDataHora($dataHora) {
             --accent-hover: #00FF00;
             --error-color: #ff3860;
             --success-color: #09c372;
+            --input-icon-color: #FFFFFF;
         }
         
         .light-theme {
@@ -129,6 +130,7 @@ function formatarDataHora($dataHora) {
             --tech-green: #38a169;
             --error-color: #e53e3e;
             --success-color: #38a169;
+            --input-icon-color: #2d3748;
         }
         
         * {
@@ -467,6 +469,7 @@ function formatarDataHora($dataHora) {
         /* Form Styles */
         .form-group {
             margin-bottom: 20px;
+            position: relative;
         }
         
         .form-group label {
@@ -505,6 +508,24 @@ function formatarDataHora($dataHora) {
         .light-theme .form-group textarea:focus {
             border-color: var(--accent-color);
             box-shadow: 0 0 10px rgba(45, 125, 90, 0.2);
+        }
+        
+        /* Ícones para campos de data e hora */
+        .input-with-icon {
+            position: relative;
+        }
+        
+        .input-with-icon i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--input-icon-color);
+            pointer-events: none;
+        }
+        
+        .input-with-icon input {
+            padding-right: 40px;
         }
         
         .btn-primary {
@@ -1239,6 +1260,8 @@ function formatarDataHora($dataHora) {
                         <div class="form-group">
                             <label for="tipo">Tipo</label>
                             <select id="tipo" name="tipo" required>
+                            	<option value=""></option>
+                            	<option value="credenciamento">Recepção e Credenciamento</option>
                                 <option value="palestra">Palestra</option>
                                 <option value="workshop">Workshop</option>
                                 <option value="oficina">Oficina</option>
@@ -1255,15 +1278,24 @@ function formatarDataHora($dataHora) {
                         </div>
                         <div class="form-group">
                             <label for="data">Data</label>
-                            <input type="date" id="data" name="data" required>
+                            <div class="input-with-icon">
+                                <input type="text" id="data" name="data" placeholder="dd/mm/aaaa" required pattern="\d{2}/\d{2}/\d{4}">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="hora_inicio">Hora Início</label>
-                            <input type="time" id="hora_inicio" name="hora_inicio" required>
+                            <div class="input-with-icon">
+                                <input type="time" id="hora_inicio" name="hora_inicio" required step="1">
+                                <i class="fas fa-clock"></i>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="hora_fim">Hora Fim</label>
-                            <input type="time" id="hora_fim" name="hora_fim" required>
+                            <div class="input-with-icon">
+                                <input type="time" id="hora_fim" name="hora_fim" required step="1">
+                                <i class="fas fa-clock"></i>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="vagas">Vagas</label>
@@ -1348,15 +1380,24 @@ function formatarDataHora($dataHora) {
                             </div>
                             <div class="form-group">
                                 <label for="edit-data">Data</label>
-                                <input type="date" id="edit-data" name="data" required>
+                                <div class="input-with-icon">
+                                    <input type="text" id="edit-data" name="data" placeholder="dd/mm/aaaa" required pattern="\d{2}/\d{2}/\d{4}">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="edit-hora_inicio">Hora Início</label>
-                                <input type="time" id="edit-hora_inicio" name="hora_inicio" required>
+                                <div class="input-with-icon">
+                                    <input type="time" id="edit-hora_inicio" name="hora_inicio" required step="1">
+                                    <i class="fas fa-clock"></i>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="edit-hora_fim">Hora Fim</label>
-                                <input type="time" id="edit-hora_fim" name="hora_fim" required>
+                                <div class="input-with-icon">
+                                    <input type="time" id="edit-hora_fim" name="hora_fim" required step="1">
+                                    <i class="fas fa-clock"></i>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="edit-vagas">Vagas</label>
@@ -1573,7 +1614,7 @@ function formatarDataHora($dataHora) {
     </footer>
 
     <script>
-        // Navegação do painel de admin
+        // Navegação do painel de admin com histórico
         document.querySelectorAll('.admin-nav').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -1587,9 +1628,59 @@ function formatarDataHora($dataHora) {
                 document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
                 document.getElementById(section + '-section').classList.add('active');
                 
+                // Atualizar a URL e o histórico
+                history.pushState({section: section}, '', `#${section}`);
+                
+                // Salvar a seção atual no localStorage
+                localStorage.setItem('currentSection', section);
+                
                 // Fechar menu mobile se estiver aberto
                 menu.classList.remove('active');
             });
+        });
+        
+        // Ao carregar a página, verificar se há uma seção salva
+        window.addEventListener('load', function() {
+            const savedSection = localStorage.getItem('currentSection');
+            if (savedSection) {
+                // Ativar link
+                document.querySelectorAll('.admin-nav').forEach(l => l.classList.remove('active'));
+                const activeLink = document.querySelector(`.admin-nav[data-section="${savedSection}"]`);
+                if (activeLink) {
+                    activeLink.classList.add('active');
+                }
+                
+                // Mostrar seção correspondente
+                document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+                const activeSection = document.getElementById(savedSection + '-section');
+                if (activeSection) {
+                    activeSection.classList.add('active');
+                }
+            }
+        });
+        
+        // Lidar com o botão voltar/avançar do navegador
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.section) {
+                const section = event.state.section;
+                
+                // Ativar link
+                document.querySelectorAll('.admin-nav').forEach(l => l.classList.remove('active'));
+                const activeLink = document.querySelector(`.admin-nav[data-section="${section}"]`);
+                if (activeLink) {
+                    activeLink.classList.add('active');
+                }
+                
+                // Mostrar seção correspondente
+                document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+                const activeSection = document.getElementById(section + '-section');
+                if (activeSection) {
+                    activeSection.classList.add('active');
+                }
+                
+                // Salvar a seção atual no localStorage
+                localStorage.setItem('currentSection', section);
+            }
         });
         
         // Menu mobile
@@ -1661,6 +1752,34 @@ function formatarDataHora($dataHora) {
                 if (footerLogoDark) footerLogoDark.style.display = 'block';
                 if (footerLogoLight) footerLogoLight.style.display = 'none';
             }
+        });
+        
+        // Formatação de data no formato dd/mm/yyyy
+        document.getElementById('data').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 8) {
+                value = value.slice(0, 8);
+            }
+            if (value.length > 4) {
+                value = value.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
+            } else if (value.length > 2) {
+                value = value.replace(/(\d{2})(\d{2})/, '$1/$2/');
+            }
+            e.target.value = value;
+        });
+
+        // Formatação de data no formato dd/mm/yyyy para o campo de edição
+        document.getElementById('edit-data').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 8) {
+                value = value.slice(0, 8);
+            }
+            if (value.length > 4) {
+                value = value.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
+            } else if (value.length > 2) {
+                value = value.replace(/(\d{2})(\d{2})/, '$1/$2/');
+            }
+            e.target.value = value;
         });
         
         // Editar participante
@@ -1758,6 +1877,13 @@ function formatarDataHora($dataHora) {
         document.getElementById('cadastrar-atividade-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // Converter a data do formato dd/mm/yyyy para yyyy-mm-dd
+            const dataInput = document.getElementById('data');
+            const dataParts = dataInput.value.split('/');
+            if (dataParts.length === 3) {
+                dataInput.value = `${dataParts[2]}-${dataParts[1]}-${dataParts[0]}`;
+            }
+            
             const formData = new FormData(this);
             
             fetch('painel_admin.php', {
@@ -1800,10 +1926,13 @@ function formatarDataHora($dataHora) {
                     document.getElementById('edit-palestrante').value = data.atividade.palestrante;
                     document.getElementById('edit-local').value = data.atividade.sala;
                     
-                    // Formatar data para YYYY-MM-DD
-                    const dataParts = data.atividade.data.split('/');
-                    const dataFormatada = `${dataParts[2]}-${dataParts[1]}-${dataParts[0]}`;
-                    document.getElementById('edit-data').value = dataFormatada;
+                    // Formatar data de yyyy-mm-dd para dd/mm/yyyy
+                    const dataParts = data.atividade.data.split('-');
+                    if (dataParts.length === 3) {
+                        document.getElementById('edit-data').value = `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}`;
+                    } else {
+                        document.getElementById('edit-data').value = data.atividade.data;
+                    }
                     
                     // Separar horário de início e fim
                     const horarioParts = data.atividade.horario.split(' - ');
@@ -1825,6 +1954,13 @@ function formatarDataHora($dataHora) {
         // Formulário de edição de atividade
         document.getElementById('editar-atividade-form').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Converter a data do formato dd/mm/yyyy para yyyy-mm-dd
+            const dataInput = document.getElementById('edit-data');
+            const dataParts = dataInput.value.split('/');
+            if (dataParts.length === 3) {
+                dataInput.value = `${dataParts[2]}-${dataParts[1]}-${dataParts[0]}`;
+            }
             
             const formData = new FormData(this);
             
@@ -1944,142 +2080,142 @@ function formatarDataHora($dataHora) {
         }
         
         // Gerar crachá
-function gerarCracha(id, tipo) {
-    // Buscar dados do participante
-    const formData = new FormData();
-    formData.append('action', 'buscar_participante');
-    formData.append('id', id);
-    formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
-    
-    fetch('painel_admin.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const codigoBarra = data.participante.codigo_barra;
+        function gerarCracha(id, tipo) {
+            // Buscar dados do participante
+            const formData = new FormData();
+            formData.append('action', 'buscar_participante');
+            formData.append('id', id);
+            formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
             
-            // Buscar a imagem do código de barras
-            const barcodeFormData = new FormData();
-            barcodeFormData.append('action', 'gerar_codigo_barras');
-            barcodeFormData.append('codigo', codigoBarra);
-            barcodeFormData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
-            
-            fetch('barcode_handler.php', {
+            fetch('painel_admin.php', {
                 method: 'POST',
-                body: barcodeFormData
+                body: formData
             })
             .then(response => response.json())
-            .then(barcodeData => {
-                if (barcodeData.success) {
-                    abrirJanelaCracha(data.participante, tipo, barcodeData.imagem);
+            .then(data => {
+                if (data.success) {
+                    const codigoBarra = data.participante.codigo_barra;
+                    
+                    // Buscar a imagem do código de barras
+                    const barcodeFormData = new FormData();
+                    barcodeFormData.append('action', 'gerar_codigo_barras');
+                    barcodeFormData.append('codigo', codigoBarra);
+                    barcodeFormData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
+                    
+                    fetch('barcode_handler.php', {
+                        method: 'POST',
+                        body: barcodeFormData
+                    })
+                    .then(response => response.json())
+                    .then(barcodeData => {
+                        if (barcodeData.success) {
+                            abrirJanelaCracha(data.participante, tipo, barcodeData.imagem);
+                        } else {
+                            abrirJanelaCracha(data.participante, tipo, null);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao gerar código de barras:', error);
+                        abrirJanelaCracha(data.participante, tipo, null);
+                    });
                 } else {
-                    abrirJanelaCracha(data.participante, tipo, null);
+                    alert('Erro ao carregar dados do participante');
                 }
             })
             .catch(error => {
-                console.error('Erro ao gerar código de barras:', error);
-                abrirJanelaCracha(data.participante, tipo, null);
+                console.error('Erro:', error);
             });
-        } else {
-            alert('Erro ao carregar dados do participante');
         }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-    });
-}
 
-// Função auxiliar para abrir a janela do crachá
-function abrirJanelaCracha(participante, tipo, imagemBarcode) {
-    // Abrir em uma nova janela com o crachá
-    const crachaWindow = window.open('', '_blank', 'width=400,height=500');
-    
-    let barcodeHTML = '';
-    if (imagemBarcode) {
-        barcodeHTML = `
-            <div style="text-align: center; margin: 15px 0;">
-                <img src="${imagemBarcode}" alt="Código de Barras" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
-            </div>
-        `;
-    } else {
-        barcodeHTML = `
-            <div class="cracha-codigo" style="font-family: monospace; font-size: 16px; letter-spacing: 2px; background: #f0f0f0; padding: 10px; border-radius: 5px; margin: 10px 0;">
-                ${participante.codigo_barra || 'N/A'}
-            </div>
-        `;
-    }
-    
-    crachaWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Crachá - 1ª TechWeek</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 0;
-                    padding: 20px;
-                    background: white;
-                    color: black;
-                    text-align: center;
-                }
-                .cracha-container {
-                    border: 2px solid #00BF63;
-                    border-radius: 10px;
-                    padding: 20px;
-                    max-width: 300px;
-                    margin: 0 auto;
-                    background: white;
-                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-                }
-                .cracha-header {
-                    margin-bottom: 20px;
-                }
-                .cracha-header h2 {
-                    color: #00BF63;
-                    margin: 0;
-                }
-                .cracha-nome {
-                    font-size: 18px;
-                    font-weight: bold;
-                    margin-bottom: 10px;
-                    border-bottom: 1px solid #ddd;
-                    padding-bottom: 10px;
-                }
-                .cracha-tipo {
-                    font-size: 14px;
-                    margin-bottom: 15px;
-                    color: #666;
-                    font-weight: bold;
-                }
-                .cracha-footer {
-                    margin-top: 20px;
-                    font-size: 12px;
-                    color: #999;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="cracha-container">
-                <div class="cracha-header">
-                    <h2>1ª TechWeek</h2>
-                </div>
-                <div class="cracha-nome">${participante.nome}</div>
-                <div class="cracha-tipo">${tipo.toUpperCase()}</div>
-                ${barcodeHTML}
-                <div class="cracha-footer">
-                    Evento: 20-22 Março 2025<br>
-                    Curso de Análise e Desenvolvimento de Sistemas
-                </div>
-            </div>
-        </body>
-        </html>
-    `);
-    
-    crachaWindow.document.close();
-}        
+        // Função auxiliar para abrir a janela do crachá
+        function abrirJanelaCracha(participante, tipo, imagemBarcode) {
+            // Abrir em uma nova janela com o crachá
+            const crachaWindow = window.open('', '_blank', 'width=400,height=500');
+            
+            let barcodeHTML = '';
+            if (imagemBarcode) {
+                barcodeHTML = `
+                    <div style="text-align: center; margin: 15px 0;">
+                        <img src="${imagemBarcode}" alt="Código de Barras" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+                    </div>
+                `;
+            } else {
+                barcodeHTML = `
+                    <div class="cracha-codigo" style="font-family: monospace; font-size: 16px; letter-spacing: 2px; background: #f0f0f0; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                        ${participante.codigo_barra || 'N/A'}
+                    </div>
+                `;
+            }
+            
+            crachaWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Crachá - 1ª TechWeek</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 20px;
+                            background: white;
+                            color: black;
+                            text-align: center;
+                        }
+                        .cracha-container {
+                            border: 2px solid #00BF63;
+                            border-radius: 10px;
+                            padding: 20px;
+                            max-width: 300px;
+                            margin: 0 auto;
+                            background: white;
+                            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                        }
+                        .cracha-header {
+                            margin-bottom: 20px;
+                        }
+                        .cracha-header h2 {
+                            color: #00BF63;
+                            margin: 0;
+                        }
+                        .cracha-nome {
+                            font-size: 18px;
+                            font-weight: bold;
+                            margin-bottom: 10px;
+                            border-bottom: 1px solid #ddd;
+                            padding-bottom: 10px;
+                        }
+                        .cracha-tipo {
+                            font-size: 14px;
+                            margin-bottom: 15px;
+                            color: #666;
+                            font-weight: bold;
+                        }
+                        .cracha-footer {
+                            margin-top: 20px;
+                            font-size: 12px;
+                            color: #999;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="cracha-container">
+                        <div class="cracha-header">
+                            <h2>1ª TechWeek</h2>
+                        </div>
+                        <div class="cracha-nome">${participante.nome}</div>
+                        <div class="cracha-tipo">${tipo.toUpperCase()}</div>
+                        ${barcodeHTML}
+                        <div class="cracha-footer">
+                            Evento: 20-22 Março 2025<br>
+                            Curso de Análise e Desenvolvimento de Sistemas
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
+            
+            crachaWindow.document.close();
+        }        
         // Gerar certificado
         function gerarCertificado(id, atividade_id = null) {
             let url = `gerar_certificado.php?id=${id}`;

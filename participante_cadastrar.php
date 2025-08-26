@@ -111,7 +111,7 @@ try {
         ':cpf' => $cpf,
         ':codigo_barra' => $codigo_barra,
         ':telefone' => $telefone,
-        ':instituicao' => $instituicao
+        ':instituicao' => $instituicao,
     ]);
     
     $idParticipante = $pdo->lastInsertId();
@@ -124,7 +124,8 @@ try {
         'cpf' => $cpf,
         'telefone' => $telefone,
         'instituicao' => $instituicao,
-        'hash' => $hash
+        'hash' => $hash,
+        'data_cadastro' => date("Y-m-d H:i:s")
     ];
     
     // Responder com sucesso

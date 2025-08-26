@@ -96,6 +96,7 @@ function processarLogin($data, $pdo) {
                 $_SESSION['usuario_id'] = $usuario['id'];
                 $_SESSION['usuario_nome'] = $usuario['nome'];
                 $_SESSION['usuario_email'] = $usuario['email'];
+                $_SESSION['usuario_administrador'] = 1;
                 $_SESSION['logado'] = true;
                 
                 echo json_encode([

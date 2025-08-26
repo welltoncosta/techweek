@@ -159,15 +159,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $vagas = $_POST['vagas'];
         
         try {
-            $stmt = $pdo->prepare("INSERT INTO atividades (titulo, tipo, palestrante, sala, data, horario, hora_inicio, vagas, ativa) VALUES (:titulo, :tipo, :palestrante, :sala, :data, :horario, :hora_inicio, :vagas, 1)");
+            $stmt = $pdo->prepare("INSERT INTO atividades (titulo, tipo, palestrante, sala, data, hora_inicio, hora_fim, vagas, ativa) VALUES (:titulo, :tipo, :palestrante, :sala, :data, :hora_inicio, :hora_fim, :vagas, 1)");
             $stmt->execute([
                 ':titulo' => $titulo,
                 ':tipo' => $tipo,
                 ':palestrante' => $palestrante,
                 ':sala' => $local,
                 ':data' => $data,
-                ':horario' => $hora_inicio . ' - ' . $hora_fim,
                 ':hora_inicio' => $hora_inicio,
+                ':hora_fim' => $hora_fim,
                 ':vagas' => $vagas
             ]);
             
