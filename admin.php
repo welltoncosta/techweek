@@ -30,9 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $telefone = $_POST['telefone'];
         $instituicao = $_POST['instituicao'];
         $tipo = $_POST['tipo'];
+        $voucher = $_POST['voucher'];
+        $isento_pagamento = isset($_POST['isento_pagamento']) ? 1 : 0;
         
         try {
-            $stmt = $pdo->prepare("UPDATE participantes SET nome = :nome, email = :email, cpf = :cpf, telefone = :telefone, instituicao = :instituicao, tipo = :tipo WHERE id = :id");
+            $stmt = $pdo->prepare("UPDATE participantes SET nome = :nome, email = :email, cpf = :cpf, telefone = :telefone, instituicao = :instituicao, tipo = :tipo, voucher = :voucher, isento_pagamento = :isento_pagamento WHERE id = :id");
             $stmt->execute([
                 ':nome' => $nome,
                 ':email' => $email,
@@ -40,6 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':telefone' => $telefone,
                 ':instituicao' => $instituicao,
                 ':tipo' => $tipo,
+                ':voucher' => $voucher,
+                ':isento_pagamento' => $isento_pagamento,
                 ':id' => $id
             ]);
             
@@ -64,6 +68,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $response['success'] = true;
             $response['message'] = 'Status de administrador atualizado';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao atualizar status: ' . $e->getMessage();
+        }
+    }
+    
+    // Ação: Alternar status de atividade
+    if (isset($_POST['action']) && $_POST['action'] === 'toggle_ativa') {
+        $id = $_POST['id'];
+        $ativa = $_POST['ativa'] ? 1 : 0;
+        
+        try {
+            $stmt = $pdo->prepare("UPDATE atividades SET ativa = :ativa WHERE id = :id");
+            $stmt->execute([
+                ':ativa' => $ativa,
+                ':id' => $id
+            ]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Status da atividade atualizado';
         } catch (PDOException $e) {
             $response['message'] = 'Erro ao atualizar status: ' . $e->getMessage();
         }
@@ -198,6 +221,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
+    // Ação: Cadastrar participante
+    if (isset($_POST['action']) && $_POST['action'] === 'cadastrar_participante') {
+        $nome = $_POST['nome'];
+        $email = $_POST['email'];
+        $cpf = $_POST['cpf'];
+        $telefone = $_POST['telefone'];
+        $instituicao = $_POST['instituicao'];
+        $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
+        $tipo = $_POST['tipo'];
+        $voucher = $_POST['voucher'];
+        $isento_pagamento = isset($_POST['isento_pagamento']) ? 1 : 0;
+        
+        // Gerar código de barras único
+        $codigo_barra = uniqid('TW');
+        
+        try {
+            $stmt = $pdo->prepare("INSERT INTO participantes (nome, email, cpf, telefone, instituicao, senha, tipo, codigo_barra, voucher, isento_pagamento) VALUES (:nome, :email, :cpf, :telefone, :instituicao, :senha, :tipo, :codigo_barra, :voucher, :isento_pagamento)");
+            $stmt->execute([
+                ':nome' => $nome,
+                ':email' => $email,
+                ':cpf' => $cpf,
+                ':telefone' => $telefone,
+                ':instituicao' => $instituicao,
+                ':senha' => $senha,
+                ':tipo' => $tipo,
+                ':codigo_barra' => $codigo_barra,
+                ':voucher' => $voucher,
+                ':isento_pagamento' => $isento_pagamento
+            ]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Participante cadastrado com sucesso';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao cadastrar participante: ' . $e->getMessage();
+        }
+    }
+    
     // Ação: Buscar participante
     if (isset($_POST['action']) && $_POST['action'] === 'buscar_participante') {
         $id = $_POST['id'];
@@ -289,7 +349,7 @@ try {
     $participantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Lista de atividades
-    $stmt = $pdo->prepare("SELECT * FROM atividades WHERE ativa = '1' ORDER BY data, hora_inicio");
+    $stmt = $pdo->prepare("SELECT * FROM atividades ORDER BY data, hora_inicio");
     $stmt->execute();
     $atividades = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -998,6 +1058,7 @@ function formatarDataHora($dataHora) {
             max-height: 80vh;
             overflow-y: auto;
             box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            position: relative;
         }
         
         .light-theme .modal-content {
@@ -1044,6 +1105,17 @@ function formatarDataHora($dataHora) {
         .light-theme .modal button:hover {
             background: linear-gradient(45deg, var(--accent-hover), var(--accent-color));
             box-shadow: 0 0 10px rgba(45, 125, 90, 0.3);
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--error-color);
         }
         
         /* Dashboard Cards */
@@ -1122,6 +1194,7 @@ function formatarDataHora($dataHora) {
         .footer-logo img {
             max-width: 130px;
             margin-bottom: 15px;
+            transition: all 0.3s ease;
         }
         
         .footer-logo-dark {
@@ -1192,27 +1265,75 @@ function formatarDataHora($dataHora) {
             border: 1px solid var(--error-color);
         }
         
-        /* Cracha Styles */
-        .cracha-container {
-            width: 100%;
-            max-width: 300px;
-            background: white;
+        /* Flatpickr Custom Styles */
+        .flatpickr-calendar {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0 15px rgba(0, 191, 99, 0.2);
+        }
+        
+        .flatpickr-day {
+            color: var(--text-color);
+        }
+        
+        .flatpickr-day:hover {
+            background: var(--neon-green);
             color: black;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         
-        .cracha-nome {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
+        .flatpickr-day.today {
+            border-color: var(--neon-green);
         }
         
-        .cracha-codigo {
-            font-family: monospace;
-            font-size: 14px;
-            letter-spacing: 1px;
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange, .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus, .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay {
+            background: var(--tech-green);
+            border-color: var(--tech-green);
+            color: black;
+        }
+        
+        .flatpickr-time input, .flatpickr-time .flatpickr-am-pm {
+            color: var(--text-color);
+        }
+        
+        .flatpickr-time .numInputWrapper span.arrowUp:after {
+            border-bottom-color: var(--text-color);
+        }
+        
+        .flatpickr-time .numInputWrapper span.arrowDown:after {
+            border-top-color: var(--text-color);
+        }
+        
+        /* Ajustes para o tema claro */
+        .light-theme .flatpickr-calendar {
+            background: #fff;
+            color: #2d3748;
+            border: 1px solid #cbd5e0;
+            box-shadow: 0 0 15px rgba(45, 125, 90, 0.1);
+        }
+        
+        .light-theme .flatpickr-day {
+            color: #2d3748;
+        }
+        
+        .light-theme .flatpickr-day:hover {
+            background: #e2e8f0;
+        }
+        
+        .light-theme .flatpickr-day.today {
+            border-color: var(--accent-color);
+        }
+        
+        .light-theme .flatpickr-day.selected, .light-theme .flatpickr-day.startRange, .light-theme .flatpickr-day.endRange, .light-theme .flatpickr-day.selected.inRange, .light-theme .flatpickr-day.startRange.inRange, .light-theme .flatpickr-day.endRange.inRange, .light-theme .flatpickr-day.selected:focus, .light-theme .flatpickr-day.startRange:focus, .light-theme .flatpickr-day.endRange:focus, .light-theme .flatpickr-day.selected:hover, .light-theme .flatpickr-day.startRange:hover, .light-theme .flatpickr-day.endRange:hover, .light-theme .flatpickr-day.selected.prevMonthDay, .light-theme .flatpickr-day.startRange.prevMonthDay, .light-theme .flatpickr-day.endRange.prevMonthDay, .light-theme .flatpickr-day.selected.nextMonthDay, .light-theme .flatpickr-day.startRange.nextMonthDay, .light-theme .flatpickr-day.endRange.nextMonthDay {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+        
+        /* Linhas de atividades não confirmadas */
+        .data-table tr.nao-confirmada {
+            opacity: 0.6;
+            background-color: rgba(255, 0, 0, 0.1);
         }
         
         /* Media Queries */
@@ -1271,40 +1392,6 @@ function formatarDataHora($dataHora) {
                 grid-template-columns: 1fr;
             }
         }
-
-        /* Flatpickr Custom Styles */
-        .flatpickr-calendar {
-            background: var(--card-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 0 15px rgba(0, 191, 99, 0.2);
-        }
-        
-        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange, .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus, .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay {
-            background: var(--tech-green);
-            border-color: var(--tech-green);
-        }
-        
-        .flatpickr-day.today {
-            border-color: var(--tech-green);
-        }
-        
-        .flatpickr-day.today:hover, .flatpickr-day.today:focus {
-            background: var(--tech-green);
-            border-color: var(--tech-green);
-        }
-        
-        .flatpickr-time input, .flatpickr-time .flatpickr-am-pm {
-            color: var(--text-color);
-        }
-        
-        .flatpickr-time .numInputWrapper span.arrowUp:after {
-            border-bottom-color: var(--text-color);
-        }
-        
-        .flatpickr-time .numInputWrapper span.arrowDown:after {
-            border-top-color: var(--text-color);
-        }
     </style>
 </head>
 <body>
@@ -1337,7 +1424,8 @@ function formatarDataHora($dataHora) {
                     <div class="user-menu">
                         <button class="user-btn">
                             <i class="fas fa-user"></i>
-                            <?php echo $_SESSION['usuario']['nome']; ?>
+                            <?php echo explode(' ', $_SESSION['usuario']['nome'])[0]; ?>
+
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         <div class="user-dropdown" id="userDropdown">
@@ -1422,6 +1510,76 @@ function formatarDataHora($dataHora) {
             <section id="participantes-section" class="admin-section">
                 <h2>Gerenciar Participantes</h2>
                 
+                <h3>Cadastrar Novo Participante</h3>
+                <div class="table-container">
+                    <form id="cadastrar-participante-form">
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                        <input type="hidden" name="action" value="cadastrar_participante">
+                        
+                        <div class="form-group">
+                            <label for="novo-nome" class="required">Nome Completo</label>
+                            <input type="text" id="novo-nome" name="nome" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-email" class="required">E-mail</label>
+                            <input type="email" id="novo-email" name="email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-cpf" class="required">CPF</label>
+                            <input type="text" id="novo-cpf" name="cpf" required maxlength="14">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-telefone">Telefone</label>
+                            <input type="tel" id="novo-telefone" name="telefone">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-instituicao">Instituição/Empresa</label>
+                            <input type="text" id="novo-instituicao" name="instituicao">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="novo-senha" class="required">Senha</label>
+                            <input type="password" id="novo-senha" name="senha" required minlength="6">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-repita_senha" class="required">Repita a Senha</label>
+                            <input type="password" id="novo-repita_senha" name="repita_senha" required minlength="6">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-tipo">Tipo</label>
+                            <select id="novo-tipo" name="tipo" required>
+                                <option value="participante">Participante</option>
+                                <option value="organizacao">Organização</option>
+                                <option value="apoio">Apoio</option>
+                                <option value="instrutor">Instrutor</option>
+                                <option value="palestrante">Palestrante</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-voucher">Voucher (opcional)</label>
+                            <input type="text" id="novo-voucher" name="voucher">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="admin-checkbox">
+                                <input type="checkbox" id="novo-isento" name="isento_pagamento" value="1">
+                                <span class="checkmark"></span>
+                                Isento de pagamento
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Cadastrar Participante</button>
+                    </form>
+                </div>
+                
+                <h3>Lista de Participantes</h3>
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
@@ -1473,6 +1631,7 @@ function formatarDataHora($dataHora) {
                 <!-- Modal de Edição de Participante -->
                 <div class="modal" id="editar-participante-modal">
                     <div class="modal-content">
+                        <button class="close-modal" onclick="fecharModal('editar-participante-modal')">&times;</button>
                         <h3>Editar Participante</h3>
                         <form id="editar-participante-form">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
@@ -1502,13 +1661,22 @@ function formatarDataHora($dataHora) {
                                 <label for="edit-tipo">Tipo</label>
                                 <select id="edit-tipo" name="tipo" required>
                                     <option value="participante">Participante</option>
-                                    <option value="palestrante">Palestrante</option>
-                                    <option value="coordenacao">Coordenação</option>
-                                    <option value="centro_academico">Centro Acadêmico</option>
-                                    <option value="typex">TypeX</option>
-                                    <option value="apoyo">Apoio</option>
                                     <option value="organizacao">Organização</option>
+                                    <option value="apoio">Apoio</option>
+                                    <option value="instrutor">Instrutor</option>
+                                    <option value="palestrante">Palestrante</option>
                                 </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-voucher">Voucher</label>
+                                <input type="text" id="edit-voucher" name="voucher">
+                            </div>
+                            <div class="form-group">
+                                <label class="admin-checkbox">
+                                    <input type="checkbox" id="edit-isento" name="isento_pagamento" value="1">
+                                    <span class="checkmark"></span>
+                                    Isento de pagamento
+                                </label>
                             </div>
                             <button type="submit" class="btn-primary">Salvar Alterações</button>
                             <button type="button" onclick="fecharModal('editar-participante-modal')">Cancelar</button>
@@ -1591,12 +1759,13 @@ function formatarDataHora($dataHora) {
                                 <th>Horário</th>
                                 <th>Vagas</th>
                                 <th>Inscritos</th>
+                                <th>Confirmada</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($atividades as $atividade): ?>
-                            <tr>
+                            <tr class="<?php echo $atividade['ativa'] == '1' ? '' : 'nao-confirmada'; ?>">
                                 <td><?php echo htmlspecialchars($atividade['titulo']); ?></td>
                                 <td><?php echo ucfirst($atividade['tipo']); ?></td>
                                 <td><?php echo htmlspecialchars($atividade['palestrante']); ?></td>
@@ -1614,6 +1783,14 @@ function formatarDataHora($dataHora) {
                                     ?>
                                 </td>
                                 <td>
+                                    <label class="admin-checkbox">
+                                        <input type="checkbox" class="confirmada-toggle" 
+                                            data-id="<?php echo $atividade['id']; ?>" 
+                                            <?php echo $atividade['ativa'] == '1' ? 'checked' : ''; ?>>
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </td>
+                                <td>
                                     <button class="btn-primary btn-small" onclick="editarAtividade(<?php echo $atividade['id']; ?>)">Editar</button>
                                 </td>
                             </tr>
@@ -1625,6 +1802,7 @@ function formatarDataHora($dataHora) {
                 <!-- Modal de Edição de Atividade -->
                 <div class="modal" id="editar-atividade-modal">
                     <div class="modal-content">
+                        <button class="close-modal" onclick="fecharModal('editar-atividade-modal')">&times;</button>
                         <h3>Editar Atividade</h3>
                         <form id="editar-atividade-form">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
@@ -1785,6 +1963,7 @@ function formatarDataHora($dataHora) {
                 <!-- Modal para visualização de comprovante -->
                 <div class="modal" id="comprovante-modal">
                     <div class="modal-content">
+                        <button class="close-modal" onclick="fecharModal('comprovante-modal')">&times;</button>
                         <h3>Comprovante de Pagamento</h3>
                         <div id="comprovante-content">
                             <p>Carregando comprovante...</p>
@@ -1819,6 +1998,8 @@ function formatarDataHora($dataHora) {
     <!-- Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+    <!-- JsBarcode para gerar códigos de barras -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script>
         // Inicializar Flatpickr para campos de data e hora
         document.addEventListener('DOMContentLoaded', function() {
@@ -1827,8 +2008,7 @@ function formatarDataHora($dataHora) {
                 dateFormat: "d/m/Y",
                 locale: "pt",
                 allowInput: false,
-                clickOpens: true,
-                theme: "material" // Tema que se adapta ao modo claro/escuro
+                clickOpens: true
             });
             
             flatpickr("#hora_inicio", {
@@ -1996,6 +2176,77 @@ function formatarDataHora($dataHora) {
             }
         });
         
+        // Fechar modais com ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                fecharModal('editar-participante-modal');
+                fecharModal('editar-atividade-modal');
+                fecharModal('comprovante-modal');
+            }
+        });
+        
+        // Função para fechar modal com verificação de alterações
+        function fecharModal(id) {
+            const modal = document.getElementById(id);
+            const form = modal.querySelector('form');
+            let hasChanges = false;
+            
+            // Verificar se há alterações não salvas
+            if (form) {
+                const inputs = form.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    if (input.defaultValue !== input.value) {
+                        hasChanges = true;
+                    }
+                });
+            }
+            
+            if (hasChanges && !confirm('Há alterações não salvas. Deseja realmente sair?')) {
+                return;
+            }
+            
+            modal.style.display = 'none';
+        }
+        
+        // Função para abrir modal
+        function abrirModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+        
+        // Cadastrar participante
+        document.getElementById('cadastrar-participante-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Verificar se as senhas coincidem
+            const senha = document.getElementById('novo-senha').value;
+            const repitaSenha = document.getElementById('novo-repita_senha').value;
+            
+            if (senha !== repitaSenha) {
+                alert('As senhas não coincidem!');
+                return;
+            }
+            
+            const formData = new FormData(this);
+            
+            fetch('painel_admin.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Participante cadastrado com sucesso!');
+                    this.reset();
+                    location.reload();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+            });
+        });
+        
         // Editar participante
         function editarParticipante(id) {
             // Buscar dados do participante via AJAX
@@ -2013,11 +2264,21 @@ function formatarDataHora($dataHora) {
                 if (data.success) {
                     document.getElementById('edit-id').value = data.participante.id;
                     document.getElementById('edit-nome').value = data.participante.nome;
+                    document.getElementById('edit-nome').defaultValue = data.participante.nome;
                     document.getElementById('edit-email').value = data.participante.email;
+                    document.getElementById('edit-email').defaultValue = data.participante.email;
                     document.getElementById('edit-cpf').value = data.participante.cpf;
+                    document.getElementById('edit-cpf').defaultValue = data.participante.cpf;
                     document.getElementById('edit-telefone').value = data.participante.telefone || '';
+                    document.getElementById('edit-telefone').defaultValue = data.participante.telefone || '';
                     document.getElementById('edit-instituicao').value = data.participante.instituicao || '';
+                    document.getElementById('edit-instituicao').defaultValue = data.participante.instituicao || '';
                     document.getElementById('edit-tipo').value = data.participante.tipo || 'participante';
+                    document.getElementById('edit-tipo').defaultValue = data.participante.tipo || 'participante';
+                    document.getElementById('edit-voucher').value = data.participante.voucher || '';
+                    document.getElementById('edit-voucher').defaultValue = data.participante.voucher || '';
+                    document.getElementById('edit-isento').checked = data.participante.isento_pagamento == 1;
+                    document.getElementById('edit-isento').defaultChecked = data.participante.isento_pagamento == 1;
                     
                     abrirModal('editar-participante-modal');
                 } else {
@@ -2087,6 +2348,44 @@ function formatarDataHora($dataHora) {
             });
         });
         
+        // Toggle atividade confirmada
+        document.querySelectorAll('.confirmada-toggle').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const id = this.getAttribute('data-id');
+                const ativa = this.checked ? '1' : '0';
+                
+                const formData = new FormData();
+                formData.append('action', 'toggle_ativa');
+                formData.append('id', id);
+                formData.append('ativa', ativa);
+                formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
+                
+                fetch('painel_admin.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Erro: ' + data.message);
+                        this.checked = !this.checked;
+                    } else {
+                        // Atualizar a cor da linha
+                        const linha = this.closest('tr');
+                        if (ativa === '1') {
+                            linha.classList.remove('nao-confirmada');
+                        } else {
+                            linha.classList.add('nao-confirmada');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    this.checked = !this.checked;
+                });
+            });
+        });
+        
         // Cadastrar atividade
         document.getElementById('cadastrar-atividade-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -2136,21 +2435,30 @@ function formatarDataHora($dataHora) {
                 if (data.success) {
                     document.getElementById('edit-atividade-id').value = data.atividade.id;
                     document.getElementById('edit-titulo').value = data.atividade.titulo;
+                    document.getElementById('edit-titulo').defaultValue = data.atividade.titulo;
                     document.getElementById('edit-tipo').value = data.atividade.tipo;
+                    document.getElementById('edit-tipo').defaultValue = data.atividade.tipo;
                     document.getElementById('edit-palestrante').value = data.atividade.palestrante;
+                    document.getElementById('edit-palestrante').defaultValue = data.atividade.palestrante;
                     document.getElementById('edit-local').value = data.atividade.sala;
+                    document.getElementById('edit-local').defaultValue = data.atividade.sala;
                     
                     // Formatar data de yyyy-mm-dd para dd/mm/yyyy
                     const dataParts = data.atividade.data.split('-');
                     if (dataParts.length === 3) {
                         document.getElementById('edit-data').value = `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}`;
+                        document.getElementById('edit-data').defaultValue = `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}`;
                     } else {
                         document.getElementById('edit-data').value = data.atividade.data;
+                        document.getElementById('edit-data').defaultValue = data.atividade.data;
                     }
                     
                     document.getElementById('edit-hora_inicio').value = data.atividade.hora_inicio;
+                    document.getElementById('edit-hora_inicio').defaultValue = data.atividade.hora_inicio;
                     document.getElementById('edit-hora_fim').value = data.atividade.hora_fim;
+                    document.getElementById('edit-hora_fim').defaultValue = data.atividade.hora_fim;
                     document.getElementById('edit-vagas').value = data.atividade.vagas;
+                    document.getElementById('edit-vagas').defaultValue = data.atividade.vagas;
                     
                     // Inicializar Flatpickr para os campos de edição
                     flatpickr("#edit-data", {
@@ -2340,28 +2648,20 @@ function formatarDataHora($dataHora) {
                 if (data.success) {
                     const codigoBarra = data.participante.codigo_barra;
                     
-                    // Buscar a imagem do código de barras
-                    const barcodeFormData = new FormData();
-                    barcodeFormData.append('action', 'gerar_codigo_barras');
-                    barcodeFormData.append('codigo', codigoBarra);
-                    barcodeFormData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
-                    
-                    fetch('barcode_handler.php', {
-                        method: 'POST',
-                        body: barcodeFormData
-                    })
-                    .then(response => response.json())
-                    .then(barcodeData => {
-                        if (barcodeData.success) {
-                            abrirJanelaCracha(data.participante, tipo, barcodeData.imagem);
-                        } else {
-                            abrirJanelaCracha(data.participante, tipo, null);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erro ao gerar código de barras:', error);
-                        abrirJanelaCracha(data.participante, tipo, null);
+                    // Criar um canvas para gerar o código de barras
+                    const canvas = document.createElement('canvas');
+                    JsBarcode(canvas, codigoBarra, {
+                        format: "CODE128",
+                        displayValue: true,
+                        fontSize: 16,
+                        background: "#ffffff",
+                        lineColor: "#000000"
                     });
+                    
+                    // Converter canvas para data URL
+                    const barcodeDataURL = canvas.toDataURL('image/png');
+                    
+                    abrirJanelaCracha(data.participante, tipo, barcodeDataURL);
                 } else {
                     alert('Erro ao carregar dados do participante');
                 }
@@ -2373,6 +2673,17 @@ function formatarDataHora($dataHora) {
 
         // Função auxiliar para abrir a janela do crachá
         function abrirJanelaCracha(participante, tipo, imagemBarcode) {
+            // Definir cores para cada tipo
+            const cores = {
+                'participante': '#00BF63',
+                'organizacao': '#FF6B00',
+                'apoio': '#0066CC',
+                'instrutor': '#9900CC',
+                'palestrante': '#CC0000'
+            };
+            
+            const cor = cores[tipo] || '#00BF63';
+            
             // Abrir em uma nova janela com o crachá
             const crachaWindow = window.open('', '_blank', 'width=400,height=500');
             
@@ -2406,19 +2717,29 @@ function formatarDataHora($dataHora) {
                             text-align: center;
                         }
                         .cracha-container {
-                            border: 2px solid #00BF63;
+                            border: 2px solid ${cor};
                             border-radius: 10px;
                             padding: 20px;
                             max-width: 300px;
                             margin: 0 auto;
                             background: white;
                             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                            position: relative;
+                            overflow: hidden;
+                        }
+                        .cracha-sidebar {
+                            position: absolute;
+                            left: 0;
+                            top: 0;
+                            height: 100%;
+                            width: 10px;
+                            background-color: ${cor};
                         }
                         .cracha-header {
                             margin-bottom: 20px;
                         }
                         .cracha-header h2 {
-                            color: #00BF63;
+                            color: ${cor};
                             margin: 0;
                         }
                         .cracha-nome {
@@ -2433,6 +2754,7 @@ function formatarDataHora($dataHora) {
                             margin-bottom: 15px;
                             color: #666;
                             font-weight: bold;
+                            text-transform: uppercase;
                         }
                         .cracha-footer {
                             margin-top: 20px;
@@ -2443,6 +2765,7 @@ function formatarDataHora($dataHora) {
                 </head>
                 <body>
                     <div class="cracha-container">
+                        <div class="cracha-sidebar"></div>
                         <div class="cracha-header">
                             <h2>1ª TechWeek</h2>
                         </div>
@@ -2459,7 +2782,8 @@ function formatarDataHora($dataHora) {
             `);
             
             crachaWindow.document.close();
-        }        
+        }
+        
         // Gerar certificado
         function gerarCertificado(id, atividade_id = null) {
             let url = `gerar_certificado.php?id=${id}`;
@@ -2467,15 +2791,6 @@ function formatarDataHora($dataHora) {
                 url += `&atividade_id=${atividade_id}`;
             }
             window.open(url, '_blank');
-        }
-        
-        // Funções auxiliares para modais
-        function abrirModal(id) {
-            document.getElementById(id).style.display = 'flex';
-        }
-        
-        function fecharModal(id) {
-            document.getElementById(id).style.display = 'none';
         }
         
         // Logout

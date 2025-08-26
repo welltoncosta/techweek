@@ -277,6 +277,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($response);
     }
     
+// Ação: Cadastrar participante
+if (isset($_POST['action']) && $_POST['action'] === 'cadastrar_participante') {
+    $nome = $_POST['nome'];
+    $email = $_POST['email'];
+    $cpf = $_POST['cpf'];
+    $telefone = $_POST['telefone'];
+    $instituicao = $_POST['instituicao'];
+    $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
+    $tipo = $_POST['tipo'];
+    $voucher = $_POST['voucher'];
+    $isento_pagamento = isset($_POST['isento_pagamento']) ? 1 : 0;
+    
+    // Gerar código de barras único
+    $codigo_barra = uniqid('TW');
+    
+    try {
+        $stmt = $pdo->prepare("INSERT INTO participantes (nome, email, cpf, telefone, instituicao, senha, tipo, codigo_barra, voucher, isento_pagamento) VALUES (:nome, :email, :cpf, :telefone, :instituicao, :senha, :tipo, :codigo_barra, :voucher, :isento_pagamento)");
+        $stmt->execute([
+            ':nome' => $nome,
+            ':email' => $email,
+            ':cpf' => $cpf,
+            ':telefone' => $telefone,
+            ':instituicao' => $instituicao,
+            ':senha' => $senha,
+            ':tipo' => $tipo,
+            ':codigo_barra' => $codigo_barra,
+            ':voucher' => $voucher,
+            ':isento_pagamento' => $isento_pagamento
+        ]);
+        
+        $response['success'] = true;
+        $response['message'] = 'Participante cadastrado com sucesso';
+    } catch (PDOException $e) {
+        $response['message'] = 'Erro ao cadastrar participante: ' . $e->getMessage();
+    }
+
+    echo json_encode($response);
+}
+
+// Ação: Alternar status de atividade
+if (isset($_POST['action']) && $_POST['action'] === 'toggle_ativa') {
+    $id = $_POST['id'];
+    $ativa = $_POST['ativa'] ? 1 : 0;
+    
+    try {
+        $stmt = $pdo->prepare("UPDATE atividades SET ativa = :ativa WHERE id = :id");
+        $stmt->execute([
+            ':ativa' => $ativa,
+            ':id' => $id
+        ]);
+        
+        $response['success'] = true;
+        $response['message'] = 'Status da atividade atualizado';
+    } catch (PDOException $e) {
+        $response['message'] = 'Erro ao atualizar status: ' . $e->getMessage();
+    }
+
+	echo json_encode($response);
+}
+
+
     // Se for uma requisição AJAX, retornar JSON
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
         header('Content-Type: application/json');
@@ -285,8 +346,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+
+
 // Gerar token CSRF
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
-

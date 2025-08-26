@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Aug 25, 2025 at 09:37 PM
+-- Generation Time: Aug 26, 2025 at 09:31 PM
 -- Server version: 11.8.2-MariaDB-1 from Debian
 -- PHP Version: 8.4.11
 
@@ -40,8 +40,8 @@ CREATE TABLE `atividades` (
   `data` varchar(100) DEFAULT NULL,
   `horario` varchar(100) DEFAULT NULL,
   `ativa` varchar(10) DEFAULT NULL,
-  `hora_inicio` timestamp NOT NULL,
-  `hora_fim` timestamp NULL DEFAULT NULL,
+  `hora_inicio` varchar(30) DEFAULT NULL,
+  `hora_fim` varchar(30) DEFAULT NULL,
   `hash` varchar(32) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
@@ -50,9 +50,9 @@ CREATE TABLE `atividades` (
 --
 
 INSERT INTO `atividades` (`id`, `titulo`, `tipo`, `palestrante`, `singular_plural`, `sala`, `vagas`, `data`, `horario`, `ativa`, `hora_inicio`, `hora_fim`, `hash`) VALUES
-(1, 'Palestra: Como programar um computador quÃ¢ntico', 'Palestra', 'Evandro C. R. da Rosa - Co-fundador da Quantuloop, start-up brasileira de computaÃ§Ã£o quÃ¢ntica, e membro do Grupo de ComputaÃ§Ã£o QuÃ¢ntica da UFSC (GCQ-UFSC)', NULL, 'Anfiteatro (Bloco A)', '20', 'Segunda-feira - 22/04/2024', '19:15', '1', '2025-08-25 18:41:19', '2025-08-25 19:41:19', NULL),
-(3, 'Palestra: Carreira na Ã¡rea de TI e experiÃªncia no Parque TecnolÃ³gico de Itaipu (PTI) ', 'Palestra', 'Felipe Theodoro GuimarÃ£es', NULL, 'Anfiteatro (Bloco A)', '20', 'Quarta-feira - 24/04/2024', '19:15', '1', '2025-08-25 18:41:19', '2025-08-25 19:41:19', NULL),
-(4, 'Momento Cultural - Campeonatos de Xadrez, Quake e TÃªnis de mesa; FIFA no playstation 5; MÃºsica.', 'Palestra', 'ResponsÃ¡veis: Wellton Costa, Marcos Tenório e CASIS', NULL, 'Centro de ConvivÃªncia', '20', 'Quarta-feira - 24/04/2024', '21:20', '1', '2025-08-25 18:41:19', '2025-08-25 19:41:19', NULL);
+(1, 'Recepção', 'credenciamento', 'CASIS e Voluntários	', NULL, 'Hall de entrada (Bloco A)', '20', '2025-08-26', NULL, '0', '14:48', '12:45', NULL),
+(2, 'Apresentação da Orquestra da UTFPR	', 'mesa_redonda', 'Orquestra da UTFPR	', NULL, 'Anfiteatro (Bloco A)', '200', '2025-08-26', NULL, '0', '20:55', '22:55', NULL),
+(3, 'Palestra: Como programar um computador quântico', 'palestra', 'Evandro C. R. da Rosa (Co-fundador da Quantuloop, start-up brasileira de computação quântica, e membro do Grupo de Computação Quântica da UFSC (GCQ-UFSC))', NULL, 'Anfiteatro (Bloco A)', '200', '2025-08-27', NULL, '0', '13:02', '13:03', NULL);
 
 -- --------------------------------------------------------
 
@@ -70,6 +70,16 @@ CREATE TABLE `comprovantes` (
   `data_envio` timestamp NULL DEFAULT current_timestamp(),
   `data_avaliacao` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Dumping data for table `comprovantes`
+--
+
+INSERT INTO `comprovantes` (`id`, `participante_id`, `arquivo`, `tipo_arquivo`, `status`, `observacao`, `data_envio`, `data_avaliacao`) VALUES
+(1, 1, 'comprovantes/68acef96c50576.71638245.png', 'imagem', 'aprovado', NULL, '2025-08-25 23:19:50', '2025-08-25 23:24:45'),
+(2, 1, 'comprovantes/68acf0850db977.82233658.png', 'imagem', 'aprovado', NULL, '2025-08-25 23:23:49', '2025-08-25 23:24:42'),
+(3, 1, 'comprovantes/68acf1133f3576.19367857.jpg', 'imagem', 'aprovado', NULL, '2025-08-25 23:26:11', '2025-08-25 23:27:01'),
+(4, 1, 'comprovantes/68ad9e6db56b04.34447812.jpeg', 'imagem', 'aprovado', NULL, '2025-08-26 11:45:49', '2025-08-26 21:01:56');
 
 -- --------------------------------------------------------
 
@@ -102,8 +112,17 @@ CREATE TABLE `participantes` (
   `codigo_barra` varchar(20) DEFAULT NULL,
   `telefone` varchar(15) DEFAULT NULL,
   `instituicao` varchar(255) NOT NULL,
+  `voucher` varchar(50) DEFAULT NULL,
+  `isento_pagamento` tinyint(1) DEFAULT 0,
   `data_cadastro` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Dumping data for table `participantes`
+--
+
+INSERT INTO `participantes` (`id`, `administrador`, `tipo`, `hash`, `nome`, `email`, `senha`, `cpf`, `codigo_barra`, `telefone`, `instituicao`, `voucher`, `isento_pagamento`, `data_cadastro`) VALUES
+(1, 1, 'administrador', 'b715770d9ed1f0705fc06079769d1af0', 'Wellton Costa de Oliveira', 'contato@wellton.com.br', '$2y$12$EORNhANBcuYV8uxK/I4Gb.DX4ouWnPjSrmtU12dnJenFoZ.2wxIWK', '857.922.682-15', 'TW20250001', '(46) 99105-7348', 'UTFPR FB', NULL, 0, '2025-08-25 22:04:04');
 
 -- --------------------------------------------------------
 
@@ -159,25 +178,25 @@ ALTER TABLE `participantes`
 -- AUTO_INCREMENT for table `atividades`
 --
 ALTER TABLE `atividades`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `comprovantes`
 --
 ALTER TABLE `comprovantes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `inscricoes_atividades`
 --
 ALTER TABLE `inscricoes_atividades`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `participantes`
 --
 ALTER TABLE `participantes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Constraints for dumped tables
