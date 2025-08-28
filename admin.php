@@ -705,7 +705,7 @@ function formatarDataHora($dataHora) {
         /* Admin Panel */
         .admin-panel {
             display: grid;
-            grid-template-columns: 100% 1fr;
+            //grid-template-columns: 100% 1fr;
             min-height: calc(100vh - 180px);
             flex: 1;
         }
