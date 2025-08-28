@@ -10,302 +10,6 @@ if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']) || $_SESSION['us
 // Incluir arquivo de conexão
 include("conexao.php");
 
-// Processar ações do formulário
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $response = ['success' => false, 'message' => 'Ação não reconhecida'];
-    
-    // Verificar token CSRF (simplificado para este exemplo)
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        $response['message'] = 'Token de segurança inválido';
-        echo json_encode($response);
-        exit;
-    }
-    
-    // Ação: Editar participante
-    if (isset($_POST['action']) && $_POST['action'] === 'editar_participante') {
-        $id = $_POST['id'];
-        $nome = $_POST['nome'];
-        $email = $_POST['email'];
-        $cpf = $_POST['cpf'];
-        $telefone = $_POST['telefone'];
-        $instituicao = $_POST['instituicao'];
-        $tipo = $_POST['tipo'];
-        $voucher = $_POST['voucher'];
-        $isento_pagamento = isset($_POST['isento_pagamento']) ? 1 : 0;
-        
-        try {
-            $stmt = $pdo->prepare("UPDATE participantes SET nome = :nome, email = :email, cpf = :cpf, telefone = :telefone, instituicao = :instituicao, tipo = :tipo, voucher = :voucher, isento_pagamento = :isento_pagamento WHERE id = :id");
-            $stmt->execute([
-                ':nome' => $nome,
-                ':email' => $email,
-                ':cpf' => $cpf,
-                ':telefone' => $telefone,
-                ':instituicao' => $instituicao,
-                ':tipo' => $tipo,
-                ':voucher' => $voucher,
-                ':isento_pagamento' => $isento_pagamento,
-                ':id' => $id
-            ]);
-            
-            $response['success'] = true;
-            $response['message'] = 'Participante atualizado com sucesso';
-        } catch (PDOException $e) {
-            $response['message'] = 'Erro ao atualizar participante: ' . $e->getMessage();
-        }
-    }
-    
-    // Ação: Alternar status de administrador
-    if (isset($_POST['action']) && $_POST['action'] === 'toggle_admin') {
-        $id = $_POST['id'];
-        $administrador = $_POST['administrador'] ? 1 : 0;
-        
-        try {
-            $stmt = $pdo->prepare("UPDATE participantes SET administrador = :administrador WHERE id = :id");
-            $stmt->execute([
-                ':administrador' => $administrador,
-                ':id' => $id
-            ]);
-            
-            $response['success'] = true;
-            $response['message'] = 'Status de administrador atualizado';
-        } catch (PDOException $e) {
-            $response['message'] = 'Erro ao atualizar status: ' . $e->getMessage();
-        }
-    }
-    
-    // Ação: Alternar status de atividade
-    if (isset($_POST['action']) && $_POST['action'] === 'toggle_ativa') {
-        $id = $_POST['id'];
-        $ativa = $_POST['ativa'] ? 1 : 0;
-        
-        try {
-            $stmt = $pdo->prepare("UPDATE atividades SET ativa = :ativa WHERE id = :id");
-            $stmt->execute([
-                ':ativa' => $ativa,
-                ':id' => $id
-            ]);
-            
-            $response['success'] = true;
-            $response['message'] = 'Status da atividade atualizado';
-        } catch (PDOException $e) {
-            $response['message'] = 'Erro ao atualizar status: ' . $e->getMessage();
-        }
-    }
-    
-    // Ação: Cadastrar atividade
-    if (isset($_POST['action']) && $_POST['action'] === 'cadastrar_atividade') {
-        $titulo = $_POST['titulo'];
-        $tipo = $_POST['tipo'];
-        $palestrante = $_POST['palestrante'];
-        $local = $_POST['local'];
-        $data = $_POST['data'];
-        $hora_inicio = $_POST['hora_inicio'];
-        $hora_fim = $_POST['hora_fim'];
-        $vagas = $_POST['vagas'];
-        
-        try {
-            $stmt = $pdo->prepare("INSERT INTO atividades (titulo, tipo, palestrante, sala, data, horario, hora_inicio, hora_fim, vagas, ativa) VALUES (:titulo, :tipo, :palestrante, :sala, :data, :horario, :hora_inicio, :hora_fim, :vagas, 1)");
-            $stmt->execute([
-                ':titulo' => $titulo,
-                ':tipo' => $tipo,
-                ':palestrante' => $palestrante,
-                ':sala' => $local,
-                ':data' => $data,
-                ':horario' => $hora_inicio . ' - ' . $hora_fim,
-                ':hora_inicio' => $hora_inicio,
-                ':hora_fim' => $hora_fim,
-                ':vagas' => $vagas
-            ]);
-            
-            $response['success'] = true;
-            $response['message'] = 'Atividade cadastrada com sucesso';
-        } catch (PDOException $e) {
-            $response['message'] = 'Erro ao cadastrar atividade: ' . $e->getMessage();
-        }
-    }
-    
-    // Ação: Editar atividade
-    if (isset($_POST['action']) && $_POST['action'] === 'editar_atividade') {
-        $id = $_POST['id'];
-        $titulo = $_POST['titulo'];
-        $tipo = $_POST['tipo'];
-        $palestrante = $_POST['palestrante'];
-        $local = $_POST['local'];
-        $data = $_POST['data'];
-        $hora_inicio = $_POST['hora_inicio'];
-        $hora_fim = $_POST['hora_fim'];
-        $vagas = $_POST['vagas'];
-        
-        try {
-            $stmt = $pdo->prepare("UPDATE atividades SET titulo = :titulo, tipo = :tipo, palestrante = :palestrante, sala = :sala, data = :data, horario = :horario, hora_inicio = :hora_inicio, hora_fim = :hora_fim, vagas = :vagas WHERE id = :id");
-            $stmt->execute([
-                ':titulo' => $titulo,
-                ':tipo' => $tipo,
-                ':palestrante' => $palestrante,
-                ':sala' => $local,
-                ':data' => $data,
-                ':horario' => $hora_inicio . ' - ' . $hora_fim,
-                ':hora_inicio' => $hora_inicio,
-                ':hora_fim' => $hora_fim,
-                ':vagas' => $vagas,
-                ':id' => $id
-            ]);
-            
-            $response['success'] = true;
-            $response['message'] = 'Atividade atualizada com sucesso';
-        } catch (PDOException $e) {
-            $response['message'] = 'Erro ao atualizar atividade: ' . $e->getMessage();
-        }
-    }
-    
-    // Ação: Registrar presença
-    if (isset($_POST['action']) && $_POST['action'] === 'registrar_presenca') {
-        $atividade_id = $_POST['atividade_id'];
-        $codigo_barras = $_POST['codigo_barras'];
-        
-        try {
-            // Buscar participante pelo código de barras
-            $stmt = $pdo->prepare("SELECT id FROM participantes WHERE codigo_barra = :codigo_barra");
-            $stmt->execute([':codigo_barra' => $codigo_barras]);
-            $participante = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($participante) {
-                $participante_id = $participante['id'];
-                
-                // Verificar se já registrou presença
-                $stmt = $pdo->prepare("SELECT id FROM presencas WHERE id_participante = :participante_id AND id_atividade = :atividade_id");
-                $stmt->execute([
-                    ':participante_id' => $participante_id,
-                    ':atividade_id' => $atividade_id
-                ]);
-                
-                if ($stmt->rowCount() === 0) {
-                    // Registrar presença
-                    $stmt = $pdo->prepare("INSERT INTO presencas (id_participante, id_atividade, data_hora) VALUES (:participante_id, :atividade_id, NOW())");
-                    $stmt->execute([
-                        ':participante_id' => $participante_id,
-                        ':atividade_id' => $atividade_id
-                    ]);
-                    
-                    $response['success'] = true;
-                    $response['message'] = 'Presença registrada com sucesso';
-                } else {
-                    $response['message'] = 'Presença já registrada anteriormente';
-                }
-            } else {
-                $response['message'] = 'Participante não encontrado com este código de barras';
-            }
-        } catch (PDOException $e) {
-            $response['message'] = 'Erro ao registrar presença: ' . $e->getMessage();
-        }
-    }
-    
-    // Ação: Validar pagamento
-    if (isset($_POST['action']) && $_POST['action'] === 'validar_pagamento') {
-        $id = $_POST['id'];
-        $tipo = $_POST['tipo'];
-        $aprovado = $_POST['aprovado'];
-        
-        try {
-            $status = $aprovado ? 'aprovado' : 'rejeitado';
-            $stmt = $pdo->prepare("UPDATE comprovantes SET status = :status, data_avaliacao = NOW() WHERE id = :id");
-            $stmt->execute([
-                ':status' => $status,
-                ':id' => $id
-            ]);
-            
-            $response['success'] = true;
-            $response['message'] = 'Pagamento validado com sucesso';
-        } catch (PDOException $e) {
-            $response['message'] = 'Erro ao validar pagamento: ' . $e->getMessage();
-        }
-    }
-    
-    // Ação: Cadastrar participante
-    if (isset($_POST['action']) && $_POST['action'] === 'cadastrar_participante') {
-        $nome = $_POST['nome'];
-        $email = $_POST['email'];
-        $cpf = $_POST['cpf'];
-        $telefone = $_POST['telefone'];
-        $instituicao = $_POST['instituicao'];
-        $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
-        $tipo = $_POST['tipo'];
-        $voucher = $_POST['voucher'];
-        $isento_pagamento = 0; // Removido do formulário de cadastro
-        
-        // Gerar código de barras único
-        $codigo_barra = uniqid('TW');
-        
-        try {
-            $stmt = $pdo->prepare("INSERT INTO participantes (nome, email, cpf, telefone, instituicao, senha, tipo, codigo_barra, voucher, isento_pagamento) VALUES (:nome, :email, :cpf, :telefone, :instituicao, :senha, :tipo, :codigo_barra, :voucher, :isento_pagamento)");
-            $stmt->execute([
-                ':nome' => $nome,
-                ':email' => $email,
-                ':cpf' => $cpf,
-                ':telefone' => $telefone,
-                ':instituicao' => $instituicao,
-                ':senha' => $senha,
-                ':tipo' => $tipo,
-                ':codigo_barra' => $codigo_barra,
-                ':voucher' => $voucher,
-                ':isento_pagamento' => $isento_pagamento
-            ]);
-            
-            $response['success'] = true;
-            $response['message'] = 'Participante cadastrado com sucesso';
-        } catch (PDOException $e) {
-            $response['message'] = 'Erro ao cadastrar participante: ' . $e->getMessage();
-        }
-    }
-    
-    // Ação: Buscar participante
-    if (isset($_POST['action']) && $_POST['action'] === 'buscar_participante') {
-        $id = $_POST['id'];
-        
-        try {
-            $stmt = $pdo->prepare("SELECT * FROM participantes WHERE id = :id");
-            $stmt->execute([':id' => $id]);
-            $participante = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($participante) {
-                $response['success'] = true;
-                $response['participante'] = $participante;
-            } else {
-                $response['message'] = 'Participante não encontrado';
-            }
-        } catch (PDOException $e) {
-            $response['message'] = 'Erro ao buscar participante: ' . $e->getMessage();
-        }
-    }
-    
-    // Ação: Buscar atividade
-    if (isset($_POST['action']) && $_POST['action'] === 'buscar_atividade') {
-        $id = $_POST['id'];
-        
-        try {
-            $stmt = $pdo->prepare("SELECT * FROM atividades WHERE id = :id");
-            $stmt->execute([':id' => $id]);
-            $atividade = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($atividade) {
-                $response['success'] = true;
-                $response['atividade'] = $atividade;
-            } else {
-                $response['message'] = 'Atividade não encontrada';
-            }
-        } catch (PDOException $e) {
-            $response['message'] = 'Erro ao buscar atividade: ' . $e->getMessage();
-        }
-    }
-    
-    // Se for uma requisição AJAX, retornar JSON
-    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-        header('Content-Type: application/json');
-        echo json_encode($response);
-        exit;
-    }
-}
-
 // Gerar token CSRF
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -349,7 +53,7 @@ try {
     $participantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Lista de atividades
-    $stmt = $pdo->prepare("SELECT * FROM atividades ORDER BY data, hora_inicio");
+    $stmt = $pdo->prepare("SELECT * FROM atividades WHERE ativa = '1' ORDER BY data, hora_inicio");
     $stmt->execute();
     $atividades = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -391,12 +95,8 @@ function formatarDataHora($dataHora) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Administração - 1ª TechWeek</title>
-    <link rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2300FF00' d='M13 2.03v2.02c4.39.54 7.5 4.53 6.96 8.92c-.46 3.64-3.32 6.53-6.96 6.96v2c5.5-.55 9.5-5.43 8.95-10.93c-.45-4.75-4.22-8.5-8.95-8.97m-2 .03c-1.95.19-3.81.94-5.33 2.2L7.1 5.74c1.12-.9 2.47-1.48 3.9-1.68v-2M4.26 5.67A9.885 9.885 0 0 0 2.05 11h2c.19-1.42.75-2.77 1.64-3.9L4.26 5.67M2.06 13c.2 1.96.97 3.81 2.21 5.33l1.42-1.43A8.002 8.002 0 0 1 4.06 13h-2m5.04 5.37l-1.43 1.37A9.994 9.994 0 0 0 11 22v-2a8.002 8.002 0 0 1-3.9-1.63m9.33-12.37l-1.59 1.59L16 10l-4-4V3l-1 1l4 4l.47-.53l-1.53-1.53l1.59-1.59l.94.94z'/%3E%3C/svg%3E" type="image/svg+xml">
-
     <link href='https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Flatpickr CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         :root {
             --black: #000000;
@@ -705,8 +405,8 @@ function formatarDataHora($dataHora) {
         /* Admin Panel */
         .admin-panel {
             display: grid;
-            //grid-template-columns: 250px 1fr;
-            min-height: calc(100% - 180px);
+            grid-template-columns: 250px 1fr;
+            min-height: calc(100vh - 180px);
             flex: 1;
         }
         
@@ -714,17 +414,6 @@ function formatarDataHora($dataHora) {
             background-color: var(--black);
             padding: 20px;
             border-right: 1px solid var(--border-color);
-            position: fixed;
-            top: 104px; /* Altura do header */
-            left: 0;
-            width: 250px;
-            height: calc(100% - 104px);
-            overflow-y: auto;
-            z-index: 99;
-        }
-        
-        .light-theme .admin-sidebar {
-            background-color: var(--dark-gray);
         }
         
         .admin-sidebar h2 {
@@ -767,8 +456,6 @@ function formatarDataHora($dataHora) {
         .admin-content {
             padding: 20px;
             overflow-y: auto;
-            margin-left: 250px;
-            width: calc(100% - 250px);
         }
         
         .admin-section {
@@ -835,7 +522,6 @@ function formatarDataHora($dataHora) {
             transform: translateY(-50%);
             color: var(--input-icon-color);
             pointer-events: none;
-            z-index: 2;
         }
         
         .input-with-icon input {
@@ -1071,7 +757,6 @@ function formatarDataHora($dataHora) {
             max-height: 80vh;
             overflow-y: auto;
             box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-            position: relative;
         }
         
         .light-theme .modal-content {
@@ -1118,17 +803,6 @@ function formatarDataHora($dataHora) {
         .light-theme .modal button:hover {
             background: linear-gradient(45deg, var(--accent-hover), var(--accent-color));
             box-shadow: 0 0 10px rgba(45, 125, 90, 0.3);
-        }
-        
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--error-color);
         }
         
         /* Dashboard Cards */
@@ -1207,7 +881,6 @@ function formatarDataHora($dataHora) {
         .footer-logo img {
             max-width: 130px;
             margin-bottom: 15px;
-            transition: all 0.3s ease;
         }
         
         .footer-logo-dark {
@@ -1278,137 +951,47 @@ function formatarDataHora($dataHora) {
             border: 1px solid var(--error-color);
         }
         
-        /* Flatpickr Custom Styles */
-        .flatpickr-calendar {
-            background: var(--card-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 0 15px rgba(0, 191, 99, 0.2);
-        }
-        
-        .flatpickr-day {
-            color: var(--text-color);
-        }
-        
-        .flatpickr-day:hover {
-            background: var(--neon-green);
+        /* Cracha Styles */
+        .cracha-container {
+            width: 100%;
+            max-width: 300px;
+            background: white;
             color: black;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         
-        .flatpickr-day.today {
-            border-color: var(--neon-green);
+        .cracha-nome {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
         
-        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange, .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus, .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay {
-            background: var(--tech-green);
-            border-color: var(--tech-green);
-            color: black;
+        .cracha-codigo {
+            font-family: monospace;
+            font-size: 14px;
+            letter-spacing: 1px;
         }
         
-        .flatpickr-time input, .flatpickr-time .flatpickr-am-pm {
-            color: var(--text-color);
-        }
-        
-        .flatpickr-time .numInputWrapper span.arrowUp:after {
-            border-bottom-color: var(--text-color);
-        }
-        
-        .flatpickr-time .numInputWrapper span.arrowDown:after {
-            border-top-color: var(--text-color);
-        }
-        
-        /* Ajustes para o tema claro */
-        .light-theme .flatpickr-calendar {
-            background: #fff;
-            color: #2d3748;
-            border: 1px solid #cbd5e0;
-            box-shadow: 0 0 15px rgba(45, 125, 90, 0.1);
-        }
-        
-        .light-theme .flatpickr-day {
-            color: #2d3748;
-        }
-        
-        .light-theme .flatpickr-day:hover {
-            background: #e2e8f0;
-        }
-        
-        .light-theme .flatpickr-day.today {
-            border-color: var(--accent-color);
-        }
-        
-        .light-theme .flatpickr-day.selected, .light-theme .flatpickr-day.startRange, .light-theme .flatpickr-day.endRange, .light-theme .flatpickr-day.selected.inRange, .light-theme .flatpickr-day.startRange.inRange, .light-theme .flatpickr-day.endRange.inRange, .light-theme .flatpickr-day.selected:focus, .light-theme .flatpickr-day.startRange:focus, .light-theme .flatpickr-day.endRange:focus, .light-theme .flatpickr-day.selected:hover, .light-theme .flatpickr-day.startRange:hover, .light-theme .flatpickr-day.endRange:hover, .light-theme .flatpickr-day.selected.prevMonthDay, .light-theme .flatpickr-day.startRange.prevMonthDay, .light-theme .flatpickr-day.endRange.prevMonthDay, .light-theme .flatpickr-day.selected.nextMonthDay, .light-theme .flatpickr-day.startRange.nextMonthDay, .light-theme .flatpickr-day.endRange.nextMonthDay {
-            background: var(--accent-color);
-            border-color: var(--accent-color);
-            color: white;
-        }
-        
-        /* Linhas de atividades não confirmadas */
-        .data-table tr.nao-confirmada {
-            opacity: 0.6;
-            background-color: rgba(255, 0, 0, 0.1);
-        }
-        
-        /* Tabs */
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .tab-link {
-            padding: 10px 20px;
-            background: none;
-            border: none;
-            color: var(--text-color);
-            cursor: pointer;
-            font-weight: 600;
-            border-bottom: 3px solid transparent;
-        }
-        
-        .tab-link.active {
-            border-bottom-color: var(--neon-green);
-            color: var(--neon-green);
-        }
-        
-        .light-theme .tab-link.active {
-            border-bottom-color: var(--accent-color);
-            color: var(--accent-color);
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        /* Media Queries - Responsividade */
-        @media (max-width: 1200px) {
-            .admin-content {
-                margin-left: 0;
-                width: 100%;
-            }
-            
-            .admin-sidebar {
-                display: none;
-            }
-        }
-        
+        /* Media Queries */
         @media (max-width: 992px) {
             .admin-panel {
                 grid-template-columns: 1fr;
             }
             
+            .admin-sidebar {
+                display: none;
+            }
+            
             .menu {
                 display: none;
                 flex-direction: column;
-                width: 200px;
+                width: 100%;
                 background-color: var(--black);
                 position: absolute;
                 top: 100%;
-                right: 0; /* Alterado de left para right */
+                left: 0;
                 z-index: 100;
                 padding: 10px 0;
                 border-top: 1px solid var(--border-color);
@@ -1416,7 +999,6 @@ function formatarDataHora($dataHora) {
             }
             
             .light-theme .menu {
-                background-color: var(--dark-gray);
                 box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
             }
             
@@ -1426,61 +1008,6 @@ function formatarDataHora($dataHora) {
             
             .menu.active {
                 display: flex;
-            }
-            
-            /* Tabelas responsivas para mobile */
-            .table-container {
-                overflow-x: visible;
-            }
-            
-            .data-table {
-                min-width: 100%;
-                display: block;
-            }
-            
-            .data-table thead {
-                display: none;
-            }
-            
-            .data-table tbody, .data-table tr, .data-table td {
-                display: block;
-                width: 100%;
-            }
-            
-            .data-table tr {
-                margin-bottom: 15px;
-                border: 1px solid var(--border-color);
-                border-radius: 8px;
-                padding: 10px;
-                background: var(--card-bg);
-            }
-            
-            .data-table td {
-                padding: 8px 10px;
-                border: none;
-                border-bottom: 1px solid rgba(217, 217, 217, 0.1);
-                position: relative;
-                padding-left: 40%;
-            }
-            
-            .data-table td:last-child {
-                border-bottom: none;
-            }
-            
-            .data-table td:before {
-                content: attr(data-label);
-                position: absolute;
-                left: 10px;
-                top: 8px;
-                width: 35%;
-                padding-right: 10px;
-                white-space: nowrap;
-                font-weight: 600;
-                color: var(--neon-green);
-            }
-            
-            .light-theme .data-table td:before {
-                color: var(--accent-color);
             }
         }
         
@@ -1501,33 +1028,6 @@ function formatarDataHora($dataHora) {
             
             .dashboard-cards {
                 grid-template-columns: 1fr;
-            }
-            
-            .tabs {
-                flex-direction: column;
-            }
-            
-            .data-table td {
-                padding-left: 45%;
-            }
-            
-            .data-table td:before {
-                width: 40%;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            .data-table td {
-                padding-left: 50%;
-            }
-            
-            .data-table td:before {
-                width: 45%;
-            }
-            
-            .btn-primary {
-                width: 100%;
-                margin-bottom: 5px;
             }
         }
     </style>
@@ -1552,6 +1052,7 @@ function formatarDataHora($dataHora) {
                     <li><a href="#atividades" class="admin-nav" data-section="atividades">Atividades</a></li>
                     <li><a href="#presencas" class="admin-nav" data-section="presencas">Presenças</a></li>
                     <li><a href="#comprovantes" class="admin-nav" data-section="comprovantes">Comprovantes</a></li>
+                    <!--li><a href="#relatorios" class="admin-nav" data-section="relatorios">Relatórios</a></li-->
                 </ul>
 
                 <div class="header-controls">
@@ -1562,12 +1063,7 @@ function formatarDataHora($dataHora) {
                     <div class="user-menu">
                         <button class="user-btn">
                             <i class="fas fa-user"></i>
-                            <?php 
-                            // Mostrar apenas o primeiro nome
-                            $nomeCompleto = $_SESSION['usuario']['nome'];
-                            $partesNome = explode(' ', $nomeCompleto);
-                            echo $partesNome[0]; // Apenas o primeiro nome
-                            ?>
+                            <?php echo $_SESSION['usuario']['nome']; ?>
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         <div class="user-dropdown" id="userDropdown">
@@ -1593,13 +1089,11 @@ function formatarDataHora($dataHora) {
                 <li><a href="#atividades" class="admin-nav" data-section="atividades">Atividades</a></li>
                 <li><a href="#presencas" class="admin-nav" data-section="presencas">Presenças</a></li>
                 <li><a href="#comprovantes" class="admin-nav" data-section="comprovantes">Comprovantes</a></li>
+                <!--li><a href="#relatorios" class="admin-nav" data-section="relatorios">Relatórios</a></li-->
             </ul>
         </div>
         
         <div class="admin-content">
-            <!-- Mensagens para o usuário -->
-            <div id="mensagem"></div>
-            
             <!-- Seção Dashboard -->
             <section id="dashboard-section" class="admin-section active">
                 <h2>Dashboard</h2>
@@ -1655,132 +1149,57 @@ function formatarDataHora($dataHora) {
             <section id="participantes-section" class="admin-section">
                 <h2>Gerenciar Participantes</h2>
                 
-                <div class="tabs">
-                    <button class="tab-link active" data-tab="cadastrar-participante">Cadastrar</button>
-                    <button class="tab-link" data-tab="ver-participantes">Ver Participantes</button>
-                </div>
-                
-                <div id="cadastrar-participante" class="tab-content active">
-                    <h3>Cadastrar Novo Participante</h3>
-                    <div class="table-container">
-                        <form id="cadastrar-participante-form">
-                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                            <input type="hidden" name="action" value="cadastrar_participante">
-                            
-                            <div class="form-group">
-                                <label for="novo-nome" class="required">Nome Completo</label>
-                                <input type="text" id="novo-nome" name="nome" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-email" class="required">E-mail</label>
-                                <input type="email" id="novo-email" name="email" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-cpf" class="required">CPF</label>
-                                <input type="text" id="novo-cpf" name="cpf" required maxlength="14">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-telefone">Telefone</label>
-                                <input type="tel" id="novo-telefone" name="telefone">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-instituicao">Instituição/Empresa</label>
-                                <input type="text" id="novo-instituicao" name="instituicao">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="novo-senha" class="required">Senha</label>
-                                <input type="password" id="novo-senha" name="senha" required minlength="6">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-repita_senha" class="required">Repita a Senha</label>
-                                <input type="password" id="novo-repita_senha" name="repita_senha" required minlength="6">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-tipo">Tipo</label>
-                                <select id="novo-tipo" name="tipo" required>
-                                    <option value="participante">Participante</option>
-                                    <option value="organizacao">Organização</option>
-                                    <option value="apoio">Apoio</option>
-                                    <option value="instrutor">Instrutor</option>
-                                    <option value="palestrante">Palestrante</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-voucher">Voucher (opcional)</label>
-                                <input type="text" id="novo-voucher" name="voucher">
-                            </div>
-
-                            <button type="submit" class="btn-primary">Cadastrar Participante</button>
-                        </form>
-                    </div>
-                </div>
-                
-                <div id="ver-participantes" class="tab-content">
-                    <h3>Lista de Participantes</h3>
-                    <div class="table-container">
-                        <div class="form-group">
-                            <input type="text" id="busca-participantes" placeholder="Buscar por nome, email ou CPF...">
-                        </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>E-mail</th>
-                                    <th>CPF</th>
-                                    <th>Telefone</th>
-                                    <th>Instituição</th>
-                                    <th>Tipo</th>
-                                    <th>Código</th>
-                                    <th>Admin</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($participantes as $participante): ?>
-                                <tr>
-                                    <td data-label="Nome"><?php echo htmlspecialchars($participante['nome']); ?></td>
-                                    <td data-label="E-mail"><?php echo htmlspecialchars($participante['email']); ?></td>
-                                    <td data-label="CPF"><?php echo htmlspecialchars($participante['cpf']); ?></td>
-                                    <td data-label="Telefone"><?php echo htmlspecialchars($participante['telefone'] ?? ''); ?></td>
-                                    <td data-label="Instituição"><?php echo htmlspecialchars($participante['instituicao']); ?></td>
-                                    <td data-label="Tipo">
-                                        <span class="badge badge-participante">
-                                            <?php echo ucfirst($participante['tipo'] ?? 'participante'); ?>
-                                        </span>
-                                    </td>
-                                    <td data-label="Código"><?php echo $participante['codigo_barra'] ?? 'N/A'; ?></td>
-                                    <td data-label="Admin">
-                                        <label class="admin-checkbox">
-                                            <input type="checkbox" class="admin-toggle" 
-                                                data-id="<?php echo $participante['id']; ?>" 
-                                                <?php echo $participante['administrador'] ? 'checked' : ''; ?>>
-                                            <span class="checkmark"></span>
-                                        </label>
-                                    </td>
-                                    <td data-label="Ações">
-                                        <button class="btn-primary btn-small" onclick="editarParticipante(<?php echo $participante['id']; ?>)">Editar</button>
-                                        <button class="btn-primary btn-small" onclick="gerarCracha(<?php echo $participante['id']; ?>, '<?php echo $participante['tipo'] ?? 'participante'; ?>')">Crachá</button>
-                                        <button class="btn-primary btn-small" onclick="gerarCertificado(<?php echo $participante['id']; ?>)">Certificado</button>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>E-mail</th>
+                                <th>CPF</th>
+                                <th>Telefone</th>
+                                <th>Instituição</th>
+                                <th>Tipo</th>
+                                <th>Código</th>
+                                <th>Admin</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($participantes as $participante): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($participante['nome']); ?></td>
+                                <td><?php echo htmlspecialchars($participante['email']); ?></td>
+                                <td><?php echo htmlspecialchars($participante['cpf']); ?></td>
+                                <td><?php echo htmlspecialchars($participante['telefone'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($participante['instituicao']); ?></td>
+                                <td>
+                                    <span class="badge badge-participante">
+                                        <?php echo ucfirst($participante['tipo'] ?? 'participante'); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo $participante['codigo_barra'] ?? 'N/A'; ?></td>
+                                <td>
+                                    <label class="admin-checkbox">
+                                        <input type="checkbox" class="admin-toggle" 
+                                            data-id="<?php echo $participante['id']; ?>" 
+                                            <?php echo $participante['administrador'] ? 'checked' : ''; ?>>
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <button class="btn-primary btn-small" onclick="editarParticipante(<?php echo $participante['id']; ?>)">Editar</button>
+                                    <button class="btn-primary btn-small" onclick="gerarCracha(<?php echo $participante['id']; ?>, '<?php echo $participante['tipo'] ?? 'participante'; ?>')">Crachá</button>
+                                    <button class="btn-primary btn-small" onclick="gerarCertificado(<?php echo $participante['id']; ?>)">Certificado</button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
                 
                 <!-- Modal de Edição de Participante -->
                 <div class="modal" id="editar-participante-modal">
                     <div class="modal-content">
-                        <button class="close-modal" onclick="fecharModal('editar-participante-modal')">&times;</button>
                         <h3>Editar Participante</h3>
                         <form id="editar-participante-form">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
@@ -1810,22 +1229,13 @@ function formatarDataHora($dataHora) {
                                 <label for="edit-tipo">Tipo</label>
                                 <select id="edit-tipo" name="tipo" required>
                                     <option value="participante">Participante</option>
-                                    <option value="organizacao">Organização</option>
-                                    <option value="apoio">Apoio</option>
-                                    <option value="instrutor">Instrutor</option>
                                     <option value="palestrante">Palestrante</option>
+                                    <option value="coordenacao">Coordenação</option>
+                                    <option value="centro_academico">Centro Acadêmico</option>
+                                    <option value="typex">TypeX</option>
+                                    <option value="apoyo">Apoio</option>
+                                    <option value="organizacao">Organização</option>
                                 </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-voucher">Voucher</label>
-                                <input type="text" id="edit-voucher" name="voucher">
-                            </div>
-                            <div class="form-group">
-                                <label class="admin-checkbox">
-                                    <input type="checkbox" id="edit-isento" name="isento_pagamento" value="1">
-                                    <span class="checkmark"></span>
-                                    Isento de pagamento
-                                </label>
                             </div>
                             <button type="submit" class="btn-primary">Salvar Alterações</button>
                             <button type="button" onclick="fecharModal('editar-participante-modal')">Cancelar</button>
@@ -1838,132 +1248,110 @@ function formatarDataHora($dataHora) {
             <section id="atividades-section" class="admin-section">
                 <h2>Gerenciar Atividades</h2>
                 
-                <div class="tabs">
-                    <button class="tab-link active" data-tab="cadastrar-atividade">Cadastrar</button>
-                    <button class="tab-link" data-tab="ver-atividades">Ver Atividades</button>
-                </div>
-                
-                <div id="cadastrar-atividade" class="tab-content active">
-                    <div class="table-container">
-                        <h3>Cadastrar Nova Atividade</h3>
-                        <form id="cadastrar-atividade-form">
-                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                            <input type="hidden" name="action" value="cadastrar_atividade">
-                            <div class="form-group">
-                                <label for="titulo">Título</label>
-                                <input type="text" id="titulo" name="titulo" required>
+                <div class="table-container">
+                    <h3>Cadastrar Nova Atividade</h3>
+                    <form id="cadastrar-atividade-form">
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                        <input type="hidden" name="action" value="cadastrar_atividade">
+                        <div class="form-group">
+                            <label for="titulo">Título</label>
+                            <input type="text" id="titulo" name="titulo" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipo">Tipo</label>
+                            <select id="tipo" name="tipo" required>
+                            	<option value=""></option>
+                            	<option value="credenciamento">Recepção e Credenciamento</option>
+                                <option value="palestra">Palestra</option>
+                                <option value="workshop">Workshop</option>
+                                <option value="oficina">Oficina</option>
+                                <option value="mesa_redonda">Mesa Redonda</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="palestrante">Palestrante/Orientador</label>
+                            <input type="text" id="palestrante" name="palestrante" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="local">Local</label>
+                            <input type="text" id="local" name="local" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="data">Data</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="data" name="data" placeholder="dd/mm/aaaa" required pattern="\d{2}/\d{2}/\d{4}">
+                                <i class="fas fa-calendar-alt"></i>
                             </div>
-                            <div class="form-group">
-                                <label for="tipo">Tipo</label>
-                                <select id="tipo" name="tipo" required>
-                                	<option value=""></option>
-                                	<option value="credenciamento">Recepção e Credenciamento</option>
-                                    <option value="palestra">Palestra</option>
-                                    <option value="workshop">Workshop</option>
-                                    <option value="oficina">Oficina</option>
-                                    <option value="mesa_redonda">Mesa Redonda</option>
-                                </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="hora_inicio">Hora Início</label>
+                            <div class="input-with-icon">
+                                <input type="time" id="hora_inicio" name="hora_inicio" required step="1">
+                                <i class="fas fa-clock"></i>
                             </div>
-                            <div class="form-group">
-                                <label for="palestrante">Palestrante/Orientador</label>
-                                <input type="text" id="palestrante" name="palestrante" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="hora_fim">Hora Fim</label>
+                            <div class="input-with-icon">
+                                <input type="time" id="hora_fim" name="hora_fim" required step="1">
+                                <i class="fas fa-clock"></i>
                             </div>
-                            <div class="form-group">
-                                <label for="local">Local</label>
-                                <input type="text" id="local" name="local" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="data">Data</label>
-                                <div class="input-with-icon">
-                                    <input type="text" id="data" name="data" placeholder="dd/mm/aaaa" required readonly>
-                                    <i class="fas fa-calendar-alt"></i>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="hora_inicio">Hora Início</label>
-                                <div class="input-with-icon">
-                                    <input type="text" id="hora_inicio" name="hora_inicio" required readonly>
-                                    <i class="fas fa-clock"></i>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="hora_fim">Hora Fim</label>
-                                <div class="input-with-icon">
-                                    <input type="text" id="hora_fim" name="hora_fim" required readonly>
-                                    <i class="fas fa-clock"></i>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="vagas">Vagas</label>
-                                <input type="number" id="vagas" name="vagas" min="1" required>
-                            </div>
-                            <button type="submit" class="btn-primary">Cadastrar Atividade</button>
-                        </form>
-                    </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="vagas">Vagas</label>
+                            <input type="number" id="vagas" name="vagas" min="1" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Cadastrar Atividade</button>
+                    </form>
                 </div>
                                 
-                <div id="ver-atividades" class="tab-content">
-                    <div class="table-container">
-                        <h3>Atividades Cadastradas</h3>
-                        <div class="form-group">
-                            <input type="text" id="busca-atividades" placeholder="Buscar por título, palestrante ou tipo...">
-                        </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Título</th>
-                                    <th>Tipo</th>
-                                    <th>Palestrante</th>
-                                    <th>Local</th>
-                                    <th>Data</th>
-                                    <th>Horário</th>
-                                    <th>Vagas</th>
-                                    <th>Inscritos</th>
-                                    <th>Confirmada</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($atividades as $atividade): ?>
-                                <tr class="<?php echo $atividade['ativa'] == '1' ? '' : 'nao-confirmada'; ?>">
-                                    <td data-label="Título"><?php echo htmlspecialchars($atividade['titulo']); ?></td>
-                                    <td data-label="Tipo"><?php echo ucfirst($atividade['tipo']); ?></td>
-                                    <td data-label="Palestrante"><?php echo htmlspecialchars($atividade['palestrante']); ?></td>
-                                    <td data-label="Local"><?php echo htmlspecialchars($atividade['sala']); ?></td>
-                                    <td data-label="Data"><?php echo formatarData($atividade['data']); ?></td>
-                                    <td data-label="Horário"><?php echo $atividade['horario']; ?></td>
-                                    <td data-label="Vagas"><?php echo $atividade['vagas']; ?></td>
-                                    <td data-label="Inscritos">
-                                        <?php 
-                                        // Contar inscritos
-                                        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM inscricoes_atividades WHERE atividade_id = :id");
-                                        $stmt->execute([':id' => $atividade['id']]);
-                                        $inscritos = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-                                        echo $inscritos;
-                                        ?>
-                                    </td>
-                                    <td data-label="Confirmada">
-                                        <label class="admin-checkbox">
-                                            <input type="checkbox" class="confirmada-toggle" 
-                                                data-id="<?php echo $atividade['id']; ?>" 
-                                                <?php echo $atividade['ativa'] == '1' ? 'checked' : ''; ?>>
-                                            <span class="checkmark"></span>
-                                        </label>
-                                    </td>
-                                    <td data-label="Ações">
-                                        <button class="btn-primary btn-small" onclick="editarAtividade(<?php echo $atividade['id']; ?>)">Editar</button>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="table-container">
+                    <h3>Atividades Cadastradas</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Tipo</th>
+                                <th>Palestrante</th>
+                                <th>Local</th>
+                                <th>Data</th>
+                                <th>Horário</th>
+                                <th>Vagas</th>
+                                <th>Inscritos</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($atividades as $atividade): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($atividade['titulo']); ?></td>
+                                <td><?php echo ucfirst($atividade['tipo']); ?></td>
+                                <td><?php echo htmlspecialchars($atividade['palestrante']); ?></td>
+                                <td><?php echo htmlspecialchars($atividade['sala']); ?></td>
+                                <td><?php echo formatarData($atividade['data']); ?></td>
+                                <td><?php echo $atividade['horario']; ?></td>
+                                <td><?php echo $atividade['vagas']; ?></td>
+                                <td>
+                                    <?php 
+                                    // Contar inscritos
+                                    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM inscricoes_atividades WHERE atividade_id = :id");
+                                    $stmt->execute([':id' => $atividade['id']]);
+                                    $inscritos = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+                                    echo $inscritos;
+                                    ?>
+                                </td>
+                                <td>
+                                    <button class="btn-primary btn-small" onclick="editarAtividade(<?php echo $atividade['id']; ?>)">Editar</button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
                 
                 <!-- Modal de Edição de Atividade -->
                 <div class="modal" id="editar-atividade-modal">
                     <div class="modal-content">
-                        <button class="close-modal" onclick="fecharModal('editar-atividade-modal')">&times;</button>
                         <h3>Editar Atividade</h3>
                         <form id="editar-atividade-form">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
@@ -1976,7 +1364,6 @@ function formatarDataHora($dataHora) {
                             <div class="form-group">
                                 <label for="edit-tipo">Tipo</label>
                                 <select id="edit-tipo" name="tipo" required>
-                                    <option value="credenciamento">Recepção e Credenciamento</option>
                                     <option value="palestra">Palestra</option>
                                     <option value="workshop">Workshop</option>
                                     <option value="oficina">Oficina</option>
@@ -1994,21 +1381,21 @@ function formatarDataHora($dataHora) {
                             <div class="form-group">
                                 <label for="edit-data">Data</label>
                                 <div class="input-with-icon">
-                                    <input type="text" id="edit-data" name="data" placeholder="dd/mm/aaaa" required readonly>
+                                    <input type="text" id="edit-data" name="data" placeholder="dd/mm/aaaa" required pattern="\d{2}/\d{2}/\d{4}">
                                     <i class="fas fa-calendar-alt"></i>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="edit-hora_inicio">Hora Início</label>
                                 <div class="input-with-icon">
-                                    <input type="text" id="edit-hora_inicio" name="hora_inicio" required readonly>
+                                    <input type="time" id="edit-hora_inicio" name="hora_inicio" required step="1">
                                     <i class="fas fa-clock"></i>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="edit-hora_fim">Hora Fim</label>
                                 <div class="input-with-icon">
-                                    <input type="text" id="edit-hora_fim" name="hora_fim" required readonly>
+                                    <input type="time" id="edit-hora_fim" name="hora_fim" required step="1">
                                     <i class="fas fa-clock"></i>
                                 </div>
                             </div>
@@ -2027,63 +1414,51 @@ function formatarDataHora($dataHora) {
             <section id="presencas-section" class="admin-section">
                 <h2>Registrar Presenças</h2>
                 
-                <div class="tabs">
-                    <button class="tab-link active" data-tab="registrar-presenca">Registrar</button>
-                    <button class="tab-link" data-tab="ver-presencas">Ver Presenças</button>
-                </div>
-                
-                <div id="registrar-presenca" class="tab-content active">
-                    <div class="table-container">
-                        <form id="registrar-presenca-form">
-                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                            <input type="hidden" name="action" value="registrar_presenca">
-                            <div class="form-group">
-                                <label for="atividade">Atividade</label>
-                                <select id="atividade" name="atividade_id" required>
-                                    <option value="">Selecione uma atividade</option>
-                                    <?php foreach ($atividades as $atividade): ?>
-                                    <option value="<?php echo $atividade['id']; ?>">
-                                        <?php echo htmlspecialchars($atividade['titulo']) . ' - ' . formatarData($atividade['data']) . ' - ' . $atividade['hora_inicio']; ?>
-                                    </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="codigo_barras">Código de Barras</label>
-                                <input type="text" id="codigo_barras" name="codigo_barras" required autofocus>
-                            </div>
-                            <button type="submit" class="btn-primary">Registrar Presença</button>
-                        </form>
-                    </div>
-                </div>
-                
-                <div id="ver-presencas" class="tab-content">
-                    <h3>Presenças Registradas</h3>
-                    <div class="table-container">
+                <div class="table-container">
+                    <form id="registrar-presenca-form">
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                        <input type="hidden" name="action" value="registrar_presenca">
                         <div class="form-group">
-                            <input type="text" id="busca-presencas" placeholder="Buscar por participante ou atividade...">
-                        </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Participante</th>
-                                    <th>Atividade</th>
-                                    <th>Data</th>
-                                    <th>Presença</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($presencas as $presenca): ?>
-                                <tr>
-                                    <td data-label="Participante"><?php echo htmlspecialchars($presenca['nome']); ?></td>
-                                    <td data-label="Atividade"><?php echo htmlspecialchars($presenca['titulo']); ?></td>
-                                    <td data-label="Data"><?php echo formatarDataHora($presenca['data_hora']); ?></td>
-                                    <td data-label="Presença"><span class="status-approved">Confirmada</span></td>
-                                </tr>
+                            <label for="atividade">Atividade</label>
+                            <select id="atividade" name="atividade_id" required>
+                                <option value="">Selecione uma atividade</option>
+                                <?php foreach ($atividades as $atividade): ?>
+                                <option value="<?php echo $atividade['id']; ?>">
+                                    <?php echo htmlspecialchars($atividade['titulo']) . ' - ' . formatarData($atividade['data']) . ' - ' . $atividade['hora_inicio']; ?>
+                                </option>
                                 <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="codigo_barras">Código de Barras</label>
+                            <input type="text" id="codigo_barras" name="codigo_barras" required autofocus>
+                        </div>
+                        <button type="submit" class="btn-primary">Registrar Presença</button>
+                    </form>
+                </div>
+                
+                <h3>Presenças Registradas</h3>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Participante</th>
+                                <th>Atividade</th>
+                                <th>Data</th>
+                                <th>Presença</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($presencas as $presenca): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($presenca['nome']); ?></td>
+                                <td><?php echo htmlspecialchars($presenca['titulo']); ?></td>
+                                <td><?php echo formatarDataHora($presenca['data_hora']); ?></td>
+                                <td><span class="status-approved">Confirmada</span></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </section>
             
@@ -2092,9 +1467,6 @@ function formatarDataHora($dataHora) {
                 <h2>Validação de Comprovantes</h2>
                 
                 <div class="table-container">
-                    <div class="form-group">
-                        <input type="text" id="busca-comprovantes" placeholder="Buscar por participante...">
-                    </div>
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -2108,9 +1480,9 @@ function formatarDataHora($dataHora) {
                         <tbody>
                             <?php foreach ($comprovantes as $comprovante): ?>
                             <tr>
-                                <td data-label="Participante"><?php echo htmlspecialchars($comprovante['participante_nome']); ?></td>
-                                <td data-label="Data Envio"><?php echo formatarDataHora($comprovante['data_envio']); ?></td>
-                                <td data-label="Status">
+                                <td><?php echo htmlspecialchars($comprovante['participante_nome']); ?></td>
+                                <td><?php echo formatarDataHora($comprovante['data_envio']); ?></td>
+                                <td>
                                     <?php if ($comprovante['status'] == 'aprovado'): ?>
                                         <span class="status-approved">Aprovado</span>
                                     <?php elseif ($comprovante['status'] == 'rejeitado'): ?>
@@ -2119,10 +1491,10 @@ function formatarDataHora($dataHora) {
                                         <span class="status-pending">Pendente</span>
                                     <?php endif; ?>
                                 </td>
-                                <td data-label="Comprovante">
+                                <td>
                                     <button class="btn-primary btn-small" onclick="verComprovante(<?php echo $comprovante['id']; ?>)">Visualizar</button>
                                 </td>
-                                <td data-label="Ações">
+                                <td>
                                     <?php if ($comprovante['status'] == 'pendente'): ?>
                                         <button class="btn-primary btn-small" onclick="validarPagamento(<?php echo $comprovante['id']; ?>, true)">Aprovar</button>
                                         <button class="btn-primary btn-small" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" onclick="validarPagamento(<?php echo $comprovante['id']; ?>, false)">Rejeitar</button>
@@ -2139,13 +1511,83 @@ function formatarDataHora($dataHora) {
                 <!-- Modal para visualização de comprovante -->
                 <div class="modal" id="comprovante-modal">
                     <div class="modal-content">
-                        <button class="close-modal" onclick="fecharModal('comprovante-modal')">&times;</button>
                         <h3>Comprovante de Pagamento</h3>
                         <div id="comprovante-content">
                             <p>Carregando comprovante...</p>
                         </div>
                         <button onclick="fecharModal('comprovante-modal')">Fechar</button>
                     </div>
+                </div>
+            </section>
+            
+            <!-- Seção de Relatórios -->
+            <section id="relatorios-section" class="admin-section">
+                <h2>Relatórios</h2>
+                
+                <div class="dashboard-cards">
+                    <div class="dashboard-card">
+                        <i class="fas fa-users"></i>
+                        <h3>Total de Participantes</h3>
+                        <p><?php echo $total_participantes; ?></p>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h3>Total de Atividades</h3>
+                        <p><?php echo $total_atividades; ?></p>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <i class="fas fa-check-circle"></i>
+                        <h3>Presenças Confirmadas</h3>
+                        <p><?php echo $total_presencas; ?></p>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <h3>Comprovantes Pendentes</h3>
+                        <p><?php echo $comprovantes_pendentes; ?></p>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <h3>Participantes por Tipo</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Quantidade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($participantes_por_tipo as $tipo): ?>
+                            <tr>
+                                <td><span class="badge badge-participante"><?php echo ucfirst($tipo['tipo']); ?></span></td>
+                                <td><?php echo $tipo['quantidade']; ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="table-container">
+                    <h3>Atividades por Tipo</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Quantidade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($atividades_por_tipo as $tipo): ?>
+                            <tr>
+                                <td><?php echo ucfirst($tipo['tipo']); ?></td>
+                                <td><?php echo $tipo['quantidade']; ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </section>
         </div>
@@ -2171,117 +1613,7 @@ function formatarDataHora($dataHora) {
         </div>
     </footer>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
-    <!-- JsBarcode para gerar códigos de barras -->
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <!-- InputMask para máscaras -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.6/jquery.inputmask.min.js"></script>
     <script>
-        // Inicializar Flatpickr para campos de data e hora
-        document.addEventListener('DOMContentLoaded', function() {
-            // Configuração para o formulário de cadastro
-            flatpickr("#data", {
-                dateFormat: "d/m/Y",
-                locale: "pt",
-                allowInput: false,
-                clickOpens: true
-            });
-            
-            flatpickr("#hora_inicio", {
-                enableTime: true,
-                noCalendar: true,
-                dateFormat: "H:i",
-                time_24hr: true,
-                locale: "pt",
-                allowInput: false,
-                clickOpens: true,
-                minuteIncrement: 1
-            });
-            
-            flatpickr("#hora_fim", {
-                enableTime: true,
-                noCalendar: true,
-                dateFormat: "H:i",
-                time_24hr: true,
-                locale: "pt",
-                allowInput: false,
-                clickOpens: true,
-                minuteIncrement: 1
-            });
-            
-            // Máscaras para CPF e telefone
-            $('#novo-cpf, #edit-cpf').inputmask('999.999.999-99');
-            $('#novo-telefone, #edit-telefone').inputmask('(99) 99999-9999');
-            
-            // Inicializar tabs
-            document.querySelectorAll('.tab-link').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabId = tab.getAttribute('data-tab');
-                    
-                    // Desativar todas as tabs
-                    document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    
-                    // Ativar tab clicada
-                    tab.classList.add('active');
-                    document.getElementById(tabId).classList.add('active');
-                });
-            });
-            
-            // Busca em tempo real
-            document.getElementById('busca-participantes').addEventListener('input', function() {
-                const termo = this.value.toLowerCase();
-                const linhas = document.querySelectorAll('#ver-participantes .data-table tbody tr');
-                
-                linhas.forEach(linha => {
-                    const textoLinha = linha.textContent.toLowerCase();
-                    linha.style.display = textoLinha.includes(termo) ? '' : 'none';
-                });
-            });
-            
-            document.getElementById('busca-atividades').addEventListener('input', function() {
-                const termo = this.value.toLowerCase();
-                const linhas = document.querySelectorAll('#ver-atividades .data-table tbody tr');
-                
-                linhas.forEach(linha => {
-                    const textoLinha = linha.textContent.toLowerCase();
-                    linha.style.display = textoLinha.includes(termo) ? '' : 'none';
-                });
-            });
-            
-            document.getElementById('busca-presencas').addEventListener('input', function() {
-                const termo = this.value.toLowerCase();
-                const linhas = document.querySelectorAll('#ver-presencas .data-table tbody tr');
-                
-                linhas.forEach(linha => {
-                    const textoLinha = linha.textContent.toLowerCase();
-                    linha.style.display = textoLinha.includes(termo) ? '' : 'none';
-                });
-            });
-            
-            document.getElementById('busca-comprovantes').addEventListener('input', function() {
-                const termo = this.value.toLowerCase();
-                const linhas = document.querySelectorAll('#comprovantes-section .data-table tbody tr');
-                
-                linhas.forEach(linha => {
-                    const textoLinha = linha.textContent.toLowerCase();
-                    linha.style.display = textoLinha.includes(termo) ? '' : 'none';
-                });
-            });
-        });
-        
-        // Função para exibir mensagens inline
-        function exibirMensagem(mensagem, tipo) {
-            const divMensagem = document.getElementById('mensagem');
-            divMensagem.innerHTML = `<div class="message ${tipo}">${mensagem}</div>`;
-            setTimeout(() => {
-                divMensagem.innerHTML = '';
-            }, 5000);
-        }
-        
         // Navegação do painel de admin com histórico
         document.querySelectorAll('.admin-nav').forEach(link => {
             link.addEventListener('click', function(e) {
@@ -2422,79 +1754,32 @@ function formatarDataHora($dataHora) {
             }
         });
         
-        // Fechar modais com ESC
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                fecharModal('editar-participante-modal');
-                fecharModal('editar-atividade-modal');
-                fecharModal('comprovante-modal');
+        // Formatação de data no formato dd/mm/yyyy
+        document.getElementById('data').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 8) {
+                value = value.slice(0, 8);
             }
+            if (value.length > 4) {
+                value = value.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
+            } else if (value.length > 2) {
+                value = value.replace(/(\d{2})(\d{2})/, '$1/$2/');
+            }
+            e.target.value = value;
         });
-        
-        // Função para fechar modal com verificação de alterações
-        function fecharModal(id) {
-            const modal = document.getElementById(id);
-            const form = modal.querySelector('form');
-            let hasChanges = false;
-            
-            // Verificar se há alterações não salvas
-            if (form) {
-                const inputs = form.querySelectorAll('input, select, textarea');
-                inputs.forEach(input => {
-                    if (input.defaultValue !== input.value) {
-                        hasChanges = true;
-                    }
-                });
+
+        // Formatação de data no formato dd/mm/yyyy para o campo de edição
+        document.getElementById('edit-data').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 8) {
+                value = value.slice(0, 8);
             }
-            
-            if (hasChanges && !confirm('Há alterações não salvas. Deseja realmente sair?')) {
-                return;
+            if (value.length > 4) {
+                value = value.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
+            } else if (value.length > 2) {
+                value = value.replace(/(\d{2})(\d{2})/, '$1/$2/');
             }
-            
-            modal.style.display = 'none';
-        }
-        
-        // Função para abrir modal
-        function abrirModal(id) {
-            document.getElementById(id).style.display = 'flex';
-        }
-        
-        // Cadastrar participante
-        document.getElementById('cadastrar-participante-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Verificar se as senhas coincidem
-            const senha = document.getElementById('novo-senha').value;
-            const repitaSenha = document.getElementById('novo-repita_senha').value;
-            
-            if (senha !== repitaSenha) {
-                exibirMensagem('As senhas não coincidem!', 'erro');
-                return;
-            }
-            
-            const formData = new FormData(this);
-            
-            fetch('painel_admin.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    exibirMensagem('Participante cadastrado com sucesso!', 'sucesso');
-                    this.reset();
-                    // Recarregar a lista de participantes
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
-                }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                exibirMensagem('Erro ao cadastrar participante.', 'erro');
-            });
+            e.target.value = value;
         });
         
         // Editar participante
@@ -2514,30 +1799,19 @@ function formatarDataHora($dataHora) {
                 if (data.success) {
                     document.getElementById('edit-id').value = data.participante.id;
                     document.getElementById('edit-nome').value = data.participante.nome;
-                    document.getElementById('edit-nome').defaultValue = data.participante.nome;
                     document.getElementById('edit-email').value = data.participante.email;
-                    document.getElementById('edit-email').defaultValue = data.participante.email;
                     document.getElementById('edit-cpf').value = data.participante.cpf;
-                    document.getElementById('edit-cpf').defaultValue = data.participante.cpf;
                     document.getElementById('edit-telefone').value = data.participante.telefone || '';
-                    document.getElementById('edit-telefone').defaultValue = data.participante.telefone || '';
                     document.getElementById('edit-instituicao').value = data.participante.instituicao || '';
-                    document.getElementById('edit-instituicao').defaultValue = data.participante.instituicao || '';
                     document.getElementById('edit-tipo').value = data.participante.tipo || 'participante';
-                    document.getElementById('edit-tipo').defaultValue = data.participante.tipo || 'participante';
-                    document.getElementById('edit-voucher').value = data.participante.voucher || '';
-                    document.getElementById('edit-voucher').defaultValue = data.participante.voucher || '';
-                    document.getElementById('edit-isento').checked = data.participante.isento_pagamento == 1;
-                    document.getElementById('edit-isento').defaultChecked = data.participante.isento_pagamento == 1;
                     
                     abrirModal('editar-participante-modal');
                 } else {
-                    exibirMensagem('Erro ao carregar dados: ' + data.message, 'erro');
+                    alert('Erro ao carregar dados: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao carregar dados do participante.', 'erro');
             });
         }
         
@@ -2554,19 +1828,15 @@ function formatarDataHora($dataHora) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    exibirMensagem('Dados atualizados com sucesso!', 'sucesso');
+                    alert('Dados atualizados com sucesso!');
                     fecharModal('editar-participante-modal');
-                    // Recarregar a página para atualizar a lista
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
+                    location.reload();
                 } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
+                    alert('Erro: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao atualizar participante.', 'erro');
             });
         });
         
@@ -2592,56 +1862,13 @@ function formatarDataHora($dataHora) {
                 .then(response => response.json())
                 .then(data => {
                     if (!data.success) {
-                        exibirMensagem('Erro: ' + data.message, 'erro');
+                        alert('Erro: ' + data.message);
                         this.checked = !isAdmin;
-                    } else {
-                        exibirMensagem('Status de administrador atualizado', 'sucesso');
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
                     this.checked = !isAdmin;
-                    exibirMensagem('Erro ao atualizar status.', 'erro');
-                });
-            });
-        });
-        
-        // Toggle atividade confirmada
-        document.querySelectorAll('.confirmada-toggle').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const id = this.getAttribute('data-id');
-                const ativa = this.checked ? '1' : '0';
-                
-                const formData = new FormData();
-                formData.append('action', 'toggle_ativa');
-                formData.append('id', id);
-                formData.append('ativa', ativa);
-                formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
-                
-                fetch('painel_admin.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.success) {
-                        exibirMensagem('Erro: ' + data.message, 'erro');
-                        this.checked = !this.checked;
-                    } else {
-                        // Atualizar a cor da linha
-                        const linha = this.closest('tr');
-                        if (ativa === '1') {
-                            linha.classList.remove('nao-confirmada');
-                        } else {
-                            linha.classList.add('nao-confirmada');
-                        }
-                        exibirMensagem('Status da atividade atualizado', 'sucesso');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro:', error);
-                    this.checked = !this.checked;
-                    exibirMensagem('Erro ao atualizar status.', 'erro');
                 });
             });
         });
@@ -2666,19 +1893,15 @@ function formatarDataHora($dataHora) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    exibirMensagem('Atividade cadastrada com sucesso!', 'sucesso');
+                    alert('Atividade cadastrada com sucesso!');
                     this.reset();
-                    // Recarregar a página para atualizar a lista
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
+                    location.reload();
                 } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
+                    alert('Erro: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao cadastrar atividade.', 'erro');
             });
         });
         
@@ -2699,72 +1922,32 @@ function formatarDataHora($dataHora) {
                 if (data.success) {
                     document.getElementById('edit-atividade-id').value = data.atividade.id;
                     document.getElementById('edit-titulo').value = data.atividade.titulo;
-                    document.getElementById('edit-titulo').defaultValue = data.atividade.titulo;
                     document.getElementById('edit-tipo').value = data.atividade.tipo;
-                    document.getElementById('edit-tipo').defaultValue = data.atividade.tipo;
                     document.getElementById('edit-palestrante').value = data.atividade.palestrante;
-                    document.getElementById('edit-palestrante').defaultValue = data.atividade.palestrante;
                     document.getElementById('edit-local').value = data.atividade.sala;
-                    document.getElementById('edit-local').defaultValue = data.atividade.sala;
                     
                     // Formatar data de yyyy-mm-dd para dd/mm/yyyy
                     const dataParts = data.atividade.data.split('-');
                     if (dataParts.length === 3) {
                         document.getElementById('edit-data').value = `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}`;
-                        document.getElementById('edit-data').defaultValue = `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}`;
                     } else {
                         document.getElementById('edit-data').value = data.atividade.data;
-                        document.getElementById('edit-data').defaultValue = data.atividade.data;
                     }
                     
-                    document.getElementById('edit-hora_inicio').value = data.atividade.hora_inicio;
-                    document.getElementById('edit-hora_inicio').defaultValue = data.atividade.hora_inicio;
-                    document.getElementById('edit-hora_fim').value = data.atividade.hora_fim;
-                    document.getElementById('edit-hora_fim').defaultValue = data.atividade.hora_fim;
+                    // Separar horário de início e fim
+                    const horarioParts = data.atividade.horario.split(' - ');
+                    document.getElementById('edit-hora_inicio').value = horarioParts[0];
+                    document.getElementById('edit-hora_fim').value = horarioParts[1] || '';
+                    
                     document.getElementById('edit-vagas').value = data.atividade.vagas;
-                    document.getElementById('edit-vagas').defaultValue = data.atividade.vagas;
-                    
-                    // Inicializar Flatpickr para os campos de edição
-                    flatpickr("#edit-data", {
-                        dateFormat: "d/m/Y",
-                        locale: "pt",
-                        allowInput: false,
-                        clickOpens: true,
-                        defaultDate: document.getElementById('edit-data').value
-                    });
-                    
-                    flatpickr("#edit-hora_inicio", {
-                        enableTime: true,
-                        noCalendar: true,
-                        dateFormat: "H:i",
-                        time_24hr: true,
-                        locale: "pt",
-                        allowInput: false,
-                        clickOpens: true,
-                        minuteIncrement: 1,
-                        defaultDate: document.getElementById('edit-hora_inicio').value
-                    });
-                    
-                    flatpickr("#edit-hora_fim", {
-                        enableTime: true,
-                        noCalendar: true,
-                        dateFormat: "H:i",
-                        time_24hr: true,
-                        locale: "pt",
-                        allowInput: false,
-                        clickOpens: true,
-                        minuteIncrement: 1,
-                        defaultDate: document.getElementById('edit-hora_fim').value
-                    });
                     
                     abrirModal('editar-atividade-modal');
                 } else {
-                    exibirMensagem('Erro ao carregar dados: ' + data.message, 'erro');
+                    alert('Erro ao carregar dados: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao carregar dados da atividade.', 'erro');
             });
         }
         
@@ -2788,19 +1971,15 @@ function formatarDataHora($dataHora) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    exibirMensagem('Atividade atualizada com sucesso!', 'sucesso');
+                    alert('Atividade atualizada com sucesso!');
                     fecharModal('editar-atividade-modal');
-                    // Recarregar a página para atualizar a lista
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
+                    location.reload();
                 } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
+                    alert('Erro: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao atualizar atividade.', 'erro');
             });
         });
         
@@ -2817,20 +1996,23 @@ function formatarDataHora($dataHora) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    exibirMensagem('Presença registrada com sucesso!', 'sucesso');
+                    alert('Presença registrada com sucesso!');
                     this.reset();
                     document.getElementById('codigo_barras').focus();
+                    // Recarregar a página para atualizar a lista de presenças
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
                 } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
+                    alert('Erro: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao registrar presença.', 'erro');
             });
         });
         
-        // Validar pagamento via AJAX
+        // Validar pagamento
         function validarPagamento(id, aprovado) {
             if (!confirm(`Tem certeza que deseja ${aprovado ? 'aprovar' : 'reprovar'} este comprovante?`)) {
                 return;
@@ -2849,19 +2031,14 @@ function formatarDataHora($dataHora) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Atualizar a linha da tabela sem recarregar
-                    const linha = document.querySelector(`tr:has(button[onclick="validarPagamento(${id}, ${aprovado})"])`)                      ;
-                    linha.cells[2].innerHTML = aprovado ? '<span class="status-approved">Aprovado</span>' : '<span class="status-rejected">Rejeitado</span>';
-                    linha.cells[4].innerHTML = '<span>Processado</span>';
-                    
-                    exibirMensagem('Validação atualizada com sucesso!', 'sucesso');
+                    alert('Validação atualizada com sucesso!');
+                    location.reload();
                 } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
+                    alert('Erro: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao validar pagamento. Erro: ' + data.message, 'erro');
             });
         }
         
@@ -2919,43 +2096,39 @@ function formatarDataHora($dataHora) {
                 if (data.success) {
                     const codigoBarra = data.participante.codigo_barra;
                     
-                    // Criar um canvas para gerar o código de barras
-                    const canvas = document.createElement('canvas');
-                    JsBarcode(canvas, codigoBarra, {
-                        format: "CODE128",
-                        displayValue: true,
-                        fontSize: 16,
-                        background: "#ffffff",
-                        lineColor: "#000000"
+                    // Buscar a imagem do código de barras
+                    const barcodeFormData = new FormData();
+                    barcodeFormData.append('action', 'gerar_codigo_barras');
+                    barcodeFormData.append('codigo', codigoBarra);
+                    barcodeFormData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
+                    
+                    fetch('barcode_handler.php', {
+                        method: 'POST',
+                        body: barcodeFormData
+                    })
+                    .then(response => response.json())
+                    .then(barcodeData => {
+                        if (barcodeData.success) {
+                            abrirJanelaCracha(data.participante, tipo, barcodeData.imagem);
+                        } else {
+                            abrirJanelaCracha(data.participante, tipo, null);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao gerar código de barras:', error);
+                        abrirJanelaCracha(data.participante, tipo, null);
                     });
-                    
-                    // Converter canvas para data URL
-                    const barcodeDataURL = canvas.toDataURL('image/png');
-                    
-                    abrirJanelaCracha(data.participante, tipo, barcodeDataURL);
                 } else {
-                    exibirMensagem('Erro ao carregar dados do participante', 'erro');
+                    alert('Erro ao carregar dados do participante');
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao carregar dados do participante.', 'erro');
             });
         }
 
         // Função auxiliar para abrir a janela do crachá
         function abrirJanelaCracha(participante, tipo, imagemBarcode) {
-            // Definir cores para cada tipo
-            const cores = {
-                'participante': '#00BF63',
-                'organizacao': '#FF6B00',
-                'apoio': '#0066CC',
-                'instrutor': '#9900CC',
-                'palestrante': '#CC0000'
-            };
-            
-            const cor = cores[tipo] || '#00BF63';
-            
             // Abrir em uma nova janela com o crachá
             const crachaWindow = window.open('', '_blank', 'width=400,height=500');
             
@@ -2989,29 +2162,19 @@ function formatarDataHora($dataHora) {
                             text-align: center;
                         }
                         .cracha-container {
-                            border: 2px solid ${cor};
+                            border: 2px solid #00BF63;
                             border-radius: 10px;
                             padding: 20px;
                             max-width: 300px;
                             margin: 0 auto;
                             background: white;
                             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-                            position: relative;
-                            overflow: hidden;
-                        }
-                        .cracha-sidebar {
-                            position: absolute;
-                            left: 0;
-                            top: 0;
-                            height: 100%;
-                            width: 10px;
-                            background-color: ${cor};
                         }
                         .cracha-header {
                             margin-bottom: 20px;
                         }
                         .cracha-header h2 {
-                            color: ${cor};
+                            color: #00BF63;
                             margin: 0;
                         }
                         .cracha-nome {
@@ -3026,7 +2189,6 @@ function formatarDataHora($dataHora) {
                             margin-bottom: 15px;
                             color: #666;
                             font-weight: bold;
-                            text-transform: uppercase;
                         }
                         .cracha-footer {
                             margin-top: 20px;
@@ -3037,7 +2199,6 @@ function formatarDataHora($dataHora) {
                 </head>
                 <body>
                     <div class="cracha-container">
-                        <div class="cracha-sidebar"></div>
                         <div class="cracha-header">
                             <h2>1ª TechWeek</h2>
                         </div>
@@ -3045,7 +2206,8 @@ function formatarDataHora($dataHora) {
                         <div class="cracha-tipo">${tipo.toUpperCase()}</div>
                         ${barcodeHTML}
                         <div class="cracha-footer">
-                            Evento: 28 a 31 de Agosto de 2025
+                            Evento: 20-22 Março 2025<br>
+                            Curso de Análise e Desenvolvimento de Sistemas
                         </div>
                     </div>
                 </body>
@@ -3053,8 +2215,7 @@ function formatarDataHora($dataHora) {
             `);
             
             crachaWindow.document.close();
-        }
-        
+        }        
         // Gerar certificado
         function gerarCertificado(id, atividade_id = null) {
             let url = `gerar_certificado.php?id=${id}`;
@@ -3062,6 +2223,15 @@ function formatarDataHora($dataHora) {
                 url += `&atividade_id=${atividade_id}`;
             }
             window.open(url, '_blank');
+        }
+        
+        // Funções auxiliares para modais
+        function abrirModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+        
+        function fecharModal(id) {
+            document.getElementById(id).style.display = 'none';
         }
         
         // Logout

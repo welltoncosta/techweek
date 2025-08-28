@@ -705,8 +705,8 @@ function formatarDataHora($dataHora) {
         /* Admin Panel */
         .admin-panel {
             display: grid;
-            //grid-template-columns: 250px 1fr;
-            min-height: calc(100% - 180px);
+            grid-template-columns: 100% 1fr;
+            min-height: calc(100vh - 180px);
             flex: 1;
         }
         
@@ -718,7 +718,7 @@ function formatarDataHora($dataHora) {
             top: 104px; /* Altura do header */
             left: 0;
             width: 250px;
-            height: calc(100% - 104px);
+            height: calc(100vh - 104px);
             overflow-y: auto;
             z-index: 99;
         }
@@ -1384,31 +1384,29 @@ function formatarDataHora($dataHora) {
             display: block;
         }
         
-        /* Media Queries - Responsividade */
-        @media (max-width: 1200px) {
-            .admin-content {
-                margin-left: 0;
-                width: 100%;
-            }
-            
-            .admin-sidebar {
-                display: none;
-            }
-        }
-        
+        /* Media Queries */
         @media (max-width: 992px) {
             .admin-panel {
                 grid-template-columns: 1fr;
             }
             
+            .admin-sidebar {
+                display: none;
+            }
+            
+            .admin-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            
             .menu {
                 display: none;
                 flex-direction: column;
-                width: 200px;
+                width: 100%;
                 background-color: var(--black);
                 position: absolute;
                 top: 100%;
-                right: 0; /* Alterado de left para right */
+                left: 0;
                 z-index: 100;
                 padding: 10px 0;
                 border-top: 1px solid var(--border-color);
@@ -1416,7 +1414,6 @@ function formatarDataHora($dataHora) {
             }
             
             .light-theme .menu {
-                background-color: var(--dark-gray);
                 box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
             }
             
@@ -1426,61 +1423,6 @@ function formatarDataHora($dataHora) {
             
             .menu.active {
                 display: flex;
-            }
-            
-            /* Tabelas responsivas para mobile */
-            .table-container {
-                overflow-x: visible;
-            }
-            
-            .data-table {
-                min-width: 100%;
-                display: block;
-            }
-            
-            .data-table thead {
-                display: none;
-            }
-            
-            .data-table tbody, .data-table tr, .data-table td {
-                display: block;
-                width: 100%;
-            }
-            
-            .data-table tr {
-                margin-bottom: 15px;
-                border: 1px solid var(--border-color);
-                border-radius: 8px;
-                padding: 10px;
-                background: var(--card-bg);
-            }
-            
-            .data-table td {
-                padding: 8px 10px;
-                border: none;
-                border-bottom: 1px solid rgba(217, 217, 217, 0.1);
-                position: relative;
-                padding-left: 40%;
-            }
-            
-            .data-table td:last-child {
-                border-bottom: none;
-            }
-            
-            .data-table td:before {
-                content: attr(data-label);
-                position: absolute;
-                left: 10px;
-                top: 8px;
-                width: 35%;
-                padding-right: 10px;
-                white-space: nowrap;
-                font-weight: 600;
-                color: var(--neon-green);
-            }
-            
-            .light-theme .data-table td:before {
-                color: var(--accent-color);
             }
         }
         
@@ -1505,29 +1447,6 @@ function formatarDataHora($dataHora) {
             
             .tabs {
                 flex-direction: column;
-            }
-            
-            .data-table td {
-                padding-left: 45%;
-            }
-            
-            .data-table td:before {
-                width: 40%;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            .data-table td {
-                padding-left: 50%;
-            }
-            
-            .data-table td:before {
-                width: 45%;
-            }
-            
-            .btn-primary {
-                width: 100%;
-                margin-bottom: 5px;
             }
         }
     </style>
@@ -1562,12 +1481,7 @@ function formatarDataHora($dataHora) {
                     <div class="user-menu">
                         <button class="user-btn">
                             <i class="fas fa-user"></i>
-                            <?php 
-                            // Mostrar apenas o primeiro nome
-                            $nomeCompleto = $_SESSION['usuario']['nome'];
-                            $partesNome = explode(' ', $nomeCompleto);
-                            echo $partesNome[0]; // Apenas o primeiro nome
-                            ?>
+                            <?php echo explode(" ", $_SESSION['usuario']['nome'])[0]; ?>
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         <div class="user-dropdown" id="userDropdown">
@@ -1746,18 +1660,18 @@ function formatarDataHora($dataHora) {
                             <tbody>
                                 <?php foreach ($participantes as $participante): ?>
                                 <tr>
-                                    <td data-label="Nome"><?php echo htmlspecialchars($participante['nome']); ?></td>
-                                    <td data-label="E-mail"><?php echo htmlspecialchars($participante['email']); ?></td>
-                                    <td data-label="CPF"><?php echo htmlspecialchars($participante['cpf']); ?></td>
-                                    <td data-label="Telefone"><?php echo htmlspecialchars($participante['telefone'] ?? ''); ?></td>
-                                    <td data-label="Instituição"><?php echo htmlspecialchars($participante['instituicao']); ?></td>
-                                    <td data-label="Tipo">
+                                    <td><?php echo htmlspecialchars($participante['nome']); ?></td>
+                                    <td><?php echo htmlspecialchars($participante['email']); ?></td>
+                                    <td><?php echo htmlspecialchars($participante['cpf']); ?></td>
+                                    <td><?php echo htmlspecialchars($participante['telefone'] ?? ''); ?></td>
+                                    <td><?php echo htmlspecialchars($participante['instituicao']); ?></td>
+                                    <td>
                                         <span class="badge badge-participante">
                                             <?php echo ucfirst($participante['tipo'] ?? 'participante'); ?>
                                         </span>
                                     </td>
-                                    <td data-label="Código"><?php echo $participante['codigo_barra'] ?? 'N/A'; ?></td>
-                                    <td data-label="Admin">
+                                    <td><?php echo $participante['codigo_barra'] ?? 'N/A'; ?></td>
+                                    <td>
                                         <label class="admin-checkbox">
                                             <input type="checkbox" class="admin-toggle" 
                                                 data-id="<?php echo $participante['id']; ?>" 
@@ -1765,7 +1679,7 @@ function formatarDataHora($dataHora) {
                                             <span class="checkmark"></span>
                                         </label>
                                     </td>
-                                    <td data-label="Ações">
+                                    <td>
                                         <button class="btn-primary btn-small" onclick="editarParticipante(<?php echo $participante['id']; ?>)">Editar</button>
                                         <button class="btn-primary btn-small" onclick="gerarCracha(<?php echo $participante['id']; ?>, '<?php echo $participante['tipo'] ?? 'participante'; ?>')">Crachá</button>
                                         <button class="btn-primary btn-small" onclick="gerarCertificado(<?php echo $participante['id']; ?>)">Certificado</button>
@@ -1926,14 +1840,14 @@ function formatarDataHora($dataHora) {
                             <tbody>
                                 <?php foreach ($atividades as $atividade): ?>
                                 <tr class="<?php echo $atividade['ativa'] == '1' ? '' : 'nao-confirmada'; ?>">
-                                    <td data-label="Título"><?php echo htmlspecialchars($atividade['titulo']); ?></td>
-                                    <td data-label="Tipo"><?php echo ucfirst($atividade['tipo']); ?></td>
-                                    <td data-label="Palestrante"><?php echo htmlspecialchars($atividade['palestrante']); ?></td>
-                                    <td data-label="Local"><?php echo htmlspecialchars($atividade['sala']); ?></td>
-                                    <td data-label="Data"><?php echo formatarData($atividade['data']); ?></td>
-                                    <td data-label="Horário"><?php echo $atividade['horario']; ?></td>
-                                    <td data-label="Vagas"><?php echo $atividade['vagas']; ?></td>
-                                    <td data-label="Inscritos">
+                                    <td><?php echo htmlspecialchars($atividade['titulo']); ?></td>
+                                    <td><?php echo ucfirst($atividade['tipo']); ?></td>
+                                    <td><?php echo htmlspecialchars($atividade['palestrante']); ?></td>
+                                    <td><?php echo htmlspecialchars($atividade['sala']); ?></td>
+                                    <td><?php echo formatarData($atividade['data']); ?></td>
+                                    <td><?php echo $atividade['horario']; ?></td>
+                                    <td><?php echo $atividade['vagas']; ?></td>
+                                    <td>
                                         <?php 
                                         // Contar inscritos
                                         $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM inscricoes_atividades WHERE atividade_id = :id");
@@ -1942,7 +1856,7 @@ function formatarDataHora($dataHora) {
                                         echo $inscritos;
                                         ?>
                                     </td>
-                                    <td data-label="Confirmada">
+                                    <td>
                                         <label class="admin-checkbox">
                                             <input type="checkbox" class="confirmada-toggle" 
                                                 data-id="<?php echo $atividade['id']; ?>" 
@@ -1950,7 +1864,7 @@ function formatarDataHora($dataHora) {
                                             <span class="checkmark"></span>
                                         </label>
                                     </td>
-                                    <td data-label="Ações">
+                                    <td>
                                         <button class="btn-primary btn-small" onclick="editarAtividade(<?php echo $atividade['id']; ?>)">Editar</button>
                                     </td>
                                 </tr>
@@ -1967,7 +1881,7 @@ function formatarDataHora($dataHora) {
                         <h3>Editar Atividade</h3>
                         <form id="editar-atividade-form">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                            <input type="hidden" name="action" value="editar_atividade">
+                            <input type="hidden" name="action" value="editar_atividade');
                             <input type="hidden" id="edit-atividade-id" name="id">
                             <div class="form-group">
                                 <label for="edit-titulo">Título</label>
@@ -2075,10 +1989,10 @@ function formatarDataHora($dataHora) {
                             <tbody>
                                 <?php foreach ($presencas as $presenca): ?>
                                 <tr>
-                                    <td data-label="Participante"><?php echo htmlspecialchars($presenca['nome']); ?></td>
-                                    <td data-label="Atividade"><?php echo htmlspecialchars($presenca['titulo']); ?></td>
-                                    <td data-label="Data"><?php echo formatarDataHora($presenca['data_hora']); ?></td>
-                                    <td data-label="Presença"><span class="status-approved">Confirmada</span></td>
+                                    <td><?php echo htmlspecialchars($presenca['nome']); ?></td>
+                                    <td><?php echo htmlspecialchars($presenca['titulo']); ?></td>
+                                    <td><?php echo formatarDataHora($presenca['data_hora']); ?></td>
+                                    <td><span class="status-approved">Confirmada</span></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -2108,9 +2022,9 @@ function formatarDataHora($dataHora) {
                         <tbody>
                             <?php foreach ($comprovantes as $comprovante): ?>
                             <tr>
-                                <td data-label="Participante"><?php echo htmlspecialchars($comprovante['participante_nome']); ?></td>
-                                <td data-label="Data Envio"><?php echo formatarDataHora($comprovante['data_envio']); ?></td>
-                                <td data-label="Status">
+                                <td><?php echo htmlspecialchars($comprovante['participante_nome']); ?></td>
+                                <td><?php echo formatarDataHora($comprovante['data_envio']); ?></td>
+                                <td>
                                     <?php if ($comprovante['status'] == 'aprovado'): ?>
                                         <span class="status-approved">Aprovado</span>
                                     <?php elseif ($comprovante['status'] == 'rejeitado'): ?>
@@ -2119,10 +2033,10 @@ function formatarDataHora($dataHora) {
                                         <span class="status-pending">Pendente</span>
                                     <?php endif; ?>
                                 </td>
-                                <td data-label="Comprovante">
+                                <td>
                                     <button class="btn-primary btn-small" onclick="verComprovante(<?php echo $comprovante['id']; ?>)">Visualizar</button>
                                 </td>
-                                <td data-label="Ações">
+                                <td>
                                     <?php if ($comprovante['status'] == 'pendente'): ?>
                                         <button class="btn-primary btn-small" onclick="validarPagamento(<?php echo $comprovante['id']; ?>, true)">Aprovar</button>
                                         <button class="btn-primary btn-small" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" onclick="validarPagamento(<?php echo $comprovante['id']; ?>, false)">Rejeitar</button>
@@ -2850,7 +2764,7 @@ function formatarDataHora($dataHora) {
             .then(data => {
                 if (data.success) {
                     // Atualizar a linha da tabela sem recarregar
-                    const linha = document.querySelector(`tr:has(button[onclick="validarPagamento(${id}, ${aprovado})"])`)                      ;
+                    const linha = document.querySelector(`tr:has(button[onclick="validarPagamento(${id}, ${aprovado})"])`).parentNode.parentNode;
                     linha.cells[2].innerHTML = aprovado ? '<span class="status-approved">Aprovado</span>' : '<span class="status-rejected">Rejeitado</span>';
                     linha.cells[4].innerHTML = '<span>Processado</span>';
                     
@@ -2861,7 +2775,7 @@ function formatarDataHora($dataHora) {
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao validar pagamento. Erro: ' + data.message, 'erro');
+                exibirMensagem('Erro ao validar pagamento.', 'erro');
             });
         }
         

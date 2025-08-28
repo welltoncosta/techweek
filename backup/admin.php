@@ -231,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
         $tipo = $_POST['tipo'];
         $voucher = $_POST['voucher'];
-        $isento_pagamento = 0; // Removido do formulário de cadastro
+        $isento_pagamento = isset($_POST['isento_pagamento']) ? 1 : 0;
         
         // Gerar código de barras único
         $codigo_barra = uniqid('TW');
@@ -705,8 +705,8 @@ function formatarDataHora($dataHora) {
         /* Admin Panel */
         .admin-panel {
             display: grid;
-            //grid-template-columns: 250px 1fr;
-            min-height: calc(100% - 180px);
+            grid-template-columns: 250px 1fr;
+            min-height: calc(100vh - 180px);
             flex: 1;
         }
         
@@ -714,17 +714,6 @@ function formatarDataHora($dataHora) {
             background-color: var(--black);
             padding: 20px;
             border-right: 1px solid var(--border-color);
-            position: fixed;
-            top: 104px; /* Altura do header */
-            left: 0;
-            width: 250px;
-            height: calc(100% - 104px);
-            overflow-y: auto;
-            z-index: 99;
-        }
-        
-        .light-theme .admin-sidebar {
-            background-color: var(--dark-gray);
         }
         
         .admin-sidebar h2 {
@@ -767,8 +756,6 @@ function formatarDataHora($dataHora) {
         .admin-content {
             padding: 20px;
             overflow-y: auto;
-            margin-left: 250px;
-            width: calc(100% - 250px);
         }
         
         .admin-section {
@@ -1349,66 +1336,24 @@ function formatarDataHora($dataHora) {
             background-color: rgba(255, 0, 0, 0.1);
         }
         
-        /* Tabs */
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .tab-link {
-            padding: 10px 20px;
-            background: none;
-            border: none;
-            color: var(--text-color);
-            cursor: pointer;
-            font-weight: 600;
-            border-bottom: 3px solid transparent;
-        }
-        
-        .tab-link.active {
-            border-bottom-color: var(--neon-green);
-            color: var(--neon-green);
-        }
-        
-        .light-theme .tab-link.active {
-            border-bottom-color: var(--accent-color);
-            color: var(--accent-color);
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        /* Media Queries - Responsividade */
-        @media (max-width: 1200px) {
-            .admin-content {
-                margin-left: 0;
-                width: 100%;
-            }
-            
-            .admin-sidebar {
-                display: none;
-            }
-        }
-        
+        /* Media Queries */
         @media (max-width: 992px) {
             .admin-panel {
                 grid-template-columns: 1fr;
             }
             
+            .admin-sidebar {
+                display: none;
+            }
+            
             .menu {
                 display: none;
                 flex-direction: column;
-                width: 200px;
+                width: 100%;
                 background-color: var(--black);
                 position: absolute;
                 top: 100%;
-                right: 0; /* Alterado de left para right */
+                left: 0;
                 z-index: 100;
                 padding: 10px 0;
                 border-top: 1px solid var(--border-color);
@@ -1416,7 +1361,6 @@ function formatarDataHora($dataHora) {
             }
             
             .light-theme .menu {
-                background-color: var(--dark-gray);
                 box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
             }
             
@@ -1426,61 +1370,6 @@ function formatarDataHora($dataHora) {
             
             .menu.active {
                 display: flex;
-            }
-            
-            /* Tabelas responsivas para mobile */
-            .table-container {
-                overflow-x: visible;
-            }
-            
-            .data-table {
-                min-width: 100%;
-                display: block;
-            }
-            
-            .data-table thead {
-                display: none;
-            }
-            
-            .data-table tbody, .data-table tr, .data-table td {
-                display: block;
-                width: 100%;
-            }
-            
-            .data-table tr {
-                margin-bottom: 15px;
-                border: 1px solid var(--border-color);
-                border-radius: 8px;
-                padding: 10px;
-                background: var(--card-bg);
-            }
-            
-            .data-table td {
-                padding: 8px 10px;
-                border: none;
-                border-bottom: 1px solid rgba(217, 217, 217, 0.1);
-                position: relative;
-                padding-left: 40%;
-            }
-            
-            .data-table td:last-child {
-                border-bottom: none;
-            }
-            
-            .data-table td:before {
-                content: attr(data-label);
-                position: absolute;
-                left: 10px;
-                top: 8px;
-                width: 35%;
-                padding-right: 10px;
-                white-space: nowrap;
-                font-weight: 600;
-                color: var(--neon-green);
-            }
-            
-            .light-theme .data-table td:before {
-                color: var(--accent-color);
             }
         }
         
@@ -1501,33 +1390,6 @@ function formatarDataHora($dataHora) {
             
             .dashboard-cards {
                 grid-template-columns: 1fr;
-            }
-            
-            .tabs {
-                flex-direction: column;
-            }
-            
-            .data-table td {
-                padding-left: 45%;
-            }
-            
-            .data-table td:before {
-                width: 40%;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            .data-table td {
-                padding-left: 50%;
-            }
-            
-            .data-table td:before {
-                width: 45%;
-            }
-            
-            .btn-primary {
-                width: 100%;
-                margin-bottom: 5px;
             }
         }
     </style>
@@ -1562,12 +1424,8 @@ function formatarDataHora($dataHora) {
                     <div class="user-menu">
                         <button class="user-btn">
                             <i class="fas fa-user"></i>
-                            <?php 
-                            // Mostrar apenas o primeiro nome
-                            $nomeCompleto = $_SESSION['usuario']['nome'];
-                            $partesNome = explode(' ', $nomeCompleto);
-                            echo $partesNome[0]; // Apenas o primeiro nome
-                            ?>
+                            <?php echo explode(' ', $_SESSION['usuario']['nome'])[0]; ?>
+
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         <div class="user-dropdown" id="userDropdown">
@@ -1597,9 +1455,6 @@ function formatarDataHora($dataHora) {
         </div>
         
         <div class="admin-content">
-            <!-- Mensagens para o usuário -->
-            <div id="mensagem"></div>
-            
             <!-- Seção Dashboard -->
             <section id="dashboard-section" class="admin-section active">
                 <h2>Dashboard</h2>
@@ -1655,126 +1510,122 @@ function formatarDataHora($dataHora) {
             <section id="participantes-section" class="admin-section">
                 <h2>Gerenciar Participantes</h2>
                 
-                <div class="tabs">
-                    <button class="tab-link active" data-tab="cadastrar-participante">Cadastrar</button>
-                    <button class="tab-link" data-tab="ver-participantes">Ver Participantes</button>
-                </div>
-                
-                <div id="cadastrar-participante" class="tab-content active">
-                    <h3>Cadastrar Novo Participante</h3>
-                    <div class="table-container">
-                        <form id="cadastrar-participante-form">
-                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                            <input type="hidden" name="action" value="cadastrar_participante">
-                            
-                            <div class="form-group">
-                                <label for="novo-nome" class="required">Nome Completo</label>
-                                <input type="text" id="novo-nome" name="nome" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-email" class="required">E-mail</label>
-                                <input type="email" id="novo-email" name="email" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-cpf" class="required">CPF</label>
-                                <input type="text" id="novo-cpf" name="cpf" required maxlength="14">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-telefone">Telefone</label>
-                                <input type="tel" id="novo-telefone" name="telefone">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-instituicao">Instituição/Empresa</label>
-                                <input type="text" id="novo-instituicao" name="instituicao">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="novo-senha" class="required">Senha</label>
-                                <input type="password" id="novo-senha" name="senha" required minlength="6">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-repita_senha" class="required">Repita a Senha</label>
-                                <input type="password" id="novo-repita_senha" name="repita_senha" required minlength="6">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-tipo">Tipo</label>
-                                <select id="novo-tipo" name="tipo" required>
-                                    <option value="participante">Participante</option>
-                                    <option value="organizacao">Organização</option>
-                                    <option value="apoio">Apoio</option>
-                                    <option value="instrutor">Instrutor</option>
-                                    <option value="palestrante">Palestrante</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="novo-voucher">Voucher (opcional)</label>
-                                <input type="text" id="novo-voucher" name="voucher">
-                            </div>
-
-                            <button type="submit" class="btn-primary">Cadastrar Participante</button>
-                        </form>
-                    </div>
-                </div>
-                
-                <div id="ver-participantes" class="tab-content">
-                    <h3>Lista de Participantes</h3>
-                    <div class="table-container">
+                <h3>Cadastrar Novo Participante</h3>
+                <div class="table-container">
+                    <form id="cadastrar-participante-form">
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                        <input type="hidden" name="action" value="cadastrar_participante">
+                        
                         <div class="form-group">
-                            <input type="text" id="busca-participantes" placeholder="Buscar por nome, email ou CPF...">
+                            <label for="novo-nome" class="required">Nome Completo</label>
+                            <input type="text" id="novo-nome" name="nome" required>
                         </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>E-mail</th>
-                                    <th>CPF</th>
-                                    <th>Telefone</th>
-                                    <th>Instituição</th>
-                                    <th>Tipo</th>
-                                    <th>Código</th>
-                                    <th>Admin</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($participantes as $participante): ?>
-                                <tr>
-                                    <td data-label="Nome"><?php echo htmlspecialchars($participante['nome']); ?></td>
-                                    <td data-label="E-mail"><?php echo htmlspecialchars($participante['email']); ?></td>
-                                    <td data-label="CPF"><?php echo htmlspecialchars($participante['cpf']); ?></td>
-                                    <td data-label="Telefone"><?php echo htmlspecialchars($participante['telefone'] ?? ''); ?></td>
-                                    <td data-label="Instituição"><?php echo htmlspecialchars($participante['instituicao']); ?></td>
-                                    <td data-label="Tipo">
-                                        <span class="badge badge-participante">
-                                            <?php echo ucfirst($participante['tipo'] ?? 'participante'); ?>
-                                        </span>
-                                    </td>
-                                    <td data-label="Código"><?php echo $participante['codigo_barra'] ?? 'N/A'; ?></td>
-                                    <td data-label="Admin">
-                                        <label class="admin-checkbox">
-                                            <input type="checkbox" class="admin-toggle" 
-                                                data-id="<?php echo $participante['id']; ?>" 
-                                                <?php echo $participante['administrador'] ? 'checked' : ''; ?>>
-                                            <span class="checkmark"></span>
-                                        </label>
-                                    </td>
-                                    <td data-label="Ações">
-                                        <button class="btn-primary btn-small" onclick="editarParticipante(<?php echo $participante['id']; ?>)">Editar</button>
-                                        <button class="btn-primary btn-small" onclick="gerarCracha(<?php echo $participante['id']; ?>, '<?php echo $participante['tipo'] ?? 'participante'; ?>')">Crachá</button>
-                                        <button class="btn-primary btn-small" onclick="gerarCertificado(<?php echo $participante['id']; ?>)">Certificado</button>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-email" class="required">E-mail</label>
+                            <input type="email" id="novo-email" name="email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-cpf" class="required">CPF</label>
+                            <input type="text" id="novo-cpf" name="cpf" required maxlength="14">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-telefone">Telefone</label>
+                            <input type="tel" id="novo-telefone" name="telefone">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-instituicao">Instituição/Empresa</label>
+                            <input type="text" id="novo-instituicao" name="instituicao">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="novo-senha" class="required">Senha</label>
+                            <input type="password" id="novo-senha" name="senha" required minlength="6">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-repita_senha" class="required">Repita a Senha</label>
+                            <input type="password" id="novo-repita_senha" name="repita_senha" required minlength="6">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-tipo">Tipo</label>
+                            <select id="novo-tipo" name="tipo" required>
+                                <option value="participante">Participante</option>
+                                <option value="organizacao">Organização</option>
+                                <option value="apoio">Apoio</option>
+                                <option value="instrutor">Instrutor</option>
+                                <option value="palestrante">Palestrante</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="novo-voucher">Voucher (opcional)</label>
+                            <input type="text" id="novo-voucher" name="voucher">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="admin-checkbox">
+                                <input type="checkbox" id="novo-isento" name="isento_pagamento" value="1">
+                                <span class="checkmark"></span>
+                                Isento de pagamento
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Cadastrar Participante</button>
+                    </form>
+                </div>
+                
+                <h3>Lista de Participantes</h3>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>E-mail</th>
+                                <th>CPF</th>
+                                <th>Telefone</th>
+                                <th>Instituição</th>
+                                <th>Tipo</th>
+                                <th>Código</th>
+                                <th>Admin</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($participantes as $participante): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($participante['nome']); ?></td>
+                                <td><?php echo htmlspecialchars($participante['email']); ?></td>
+                                <td><?php echo htmlspecialchars($participante['cpf']); ?></td>
+                                <td><?php echo htmlspecialchars($participante['telefone'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($participante['instituicao']); ?></td>
+                                <td>
+                                    <span class="badge badge-participante">
+                                        <?php echo ucfirst($participante['tipo'] ?? 'participante'); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo $participante['codigo_barra'] ?? 'N/A'; ?></td>
+                                <td>
+                                    <label class="admin-checkbox">
+                                        <input type="checkbox" class="admin-toggle" 
+                                            data-id="<?php echo $participante['id']; ?>" 
+                                            <?php echo $participante['administrador'] ? 'checked' : ''; ?>>
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <button class="btn-primary btn-small" onclick="editarParticipante(<?php echo $participante['id']; ?>)">Editar</button>
+                                    <button class="btn-primary btn-small" onclick="gerarCracha(<?php echo $participante['id']; ?>, '<?php echo $participante['tipo'] ?? 'participante'; ?>')">Crachá</button>
+                                    <button class="btn-primary btn-small" onclick="gerarCertificado(<?php echo $participante['id']; ?>)">Certificado</button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
                 
                 <!-- Modal de Edição de Participante -->
@@ -1838,126 +1689,114 @@ function formatarDataHora($dataHora) {
             <section id="atividades-section" class="admin-section">
                 <h2>Gerenciar Atividades</h2>
                 
-                <div class="tabs">
-                    <button class="tab-link active" data-tab="cadastrar-atividade">Cadastrar</button>
-                    <button class="tab-link" data-tab="ver-atividades">Ver Atividades</button>
-                </div>
-                
-                <div id="cadastrar-atividade" class="tab-content active">
-                    <div class="table-container">
-                        <h3>Cadastrar Nova Atividade</h3>
-                        <form id="cadastrar-atividade-form">
-                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                            <input type="hidden" name="action" value="cadastrar_atividade">
-                            <div class="form-group">
-                                <label for="titulo">Título</label>
-                                <input type="text" id="titulo" name="titulo" required>
+                <div class="table-container">
+                    <h3>Cadastrar Nova Atividade</h3>
+                    <form id="cadastrar-atividade-form">
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                        <input type="hidden" name="action" value="cadastrar_atividade">
+                        <div class="form-group">
+                            <label for="titulo">Título</label>
+                            <input type="text" id="titulo" name="titulo" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipo">Tipo</label>
+                            <select id="tipo" name="tipo" required>
+                            	<option value=""></option>
+                            	<option value="credenciamento">Recepção e Credenciamento</option>
+                                <option value="palestra">Palestra</option>
+                                <option value="workshop">Workshop</option>
+                                <option value="oficina">Oficina</option>
+                                <option value="mesa_redonda">Mesa Redonda</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="palestrante">Palestrante/Orientador</label>
+                            <input type="text" id="palestrante" name="palestrante" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="local">Local</label>
+                            <input type="text" id="local" name="local" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="data">Data</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="data" name="data" placeholder="dd/mm/aaaa" required readonly>
+                                <i class="fas fa-calendar-alt"></i>
                             </div>
-                            <div class="form-group">
-                                <label for="tipo">Tipo</label>
-                                <select id="tipo" name="tipo" required>
-                                	<option value=""></option>
-                                	<option value="credenciamento">Recepção e Credenciamento</option>
-                                    <option value="palestra">Palestra</option>
-                                    <option value="workshop">Workshop</option>
-                                    <option value="oficina">Oficina</option>
-                                    <option value="mesa_redonda">Mesa Redonda</option>
-                                </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="hora_inicio">Hora Início</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="hora_inicio" name="hora_inicio" required readonly>
+                                <i class="fas fa-clock"></i>
                             </div>
-                            <div class="form-group">
-                                <label for="palestrante">Palestrante/Orientador</label>
-                                <input type="text" id="palestrante" name="palestrante" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="hora_fim">Hora Fim</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="hora_fim" name="hora_fim" required readonly>
+                                <i class="fas fa-clock"></i>
                             </div>
-                            <div class="form-group">
-                                <label for="local">Local</label>
-                                <input type="text" id="local" name="local" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="data">Data</label>
-                                <div class="input-with-icon">
-                                    <input type="text" id="data" name="data" placeholder="dd/mm/aaaa" required readonly>
-                                    <i class="fas fa-calendar-alt"></i>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="hora_inicio">Hora Início</label>
-                                <div class="input-with-icon">
-                                    <input type="text" id="hora_inicio" name="hora_inicio" required readonly>
-                                    <i class="fas fa-clock"></i>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="hora_fim">Hora Fim</label>
-                                <div class="input-with-icon">
-                                    <input type="text" id="hora_fim" name="hora_fim" required readonly>
-                                    <i class="fas fa-clock"></i>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="vagas">Vagas</label>
-                                <input type="number" id="vagas" name="vagas" min="1" required>
-                            </div>
-                            <button type="submit" class="btn-primary">Cadastrar Atividade</button>
-                        </form>
-                    </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="vagas">Vagas</label>
+                            <input type="number" id="vagas" name="vagas" min="1" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Cadastrar Atividade</button>
+                    </form>
                 </div>
                                 
-                <div id="ver-atividades" class="tab-content">
-                    <div class="table-container">
-                        <h3>Atividades Cadastradas</h3>
-                        <div class="form-group">
-                            <input type="text" id="busca-atividades" placeholder="Buscar por título, palestrante ou tipo...">
-                        </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Título</th>
-                                    <th>Tipo</th>
-                                    <th>Palestrante</th>
-                                    <th>Local</th>
-                                    <th>Data</th>
-                                    <th>Horário</th>
-                                    <th>Vagas</th>
-                                    <th>Inscritos</th>
-                                    <th>Confirmada</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($atividades as $atividade): ?>
-                                <tr class="<?php echo $atividade['ativa'] == '1' ? '' : 'nao-confirmada'; ?>">
-                                    <td data-label="Título"><?php echo htmlspecialchars($atividade['titulo']); ?></td>
-                                    <td data-label="Tipo"><?php echo ucfirst($atividade['tipo']); ?></td>
-                                    <td data-label="Palestrante"><?php echo htmlspecialchars($atividade['palestrante']); ?></td>
-                                    <td data-label="Local"><?php echo htmlspecialchars($atividade['sala']); ?></td>
-                                    <td data-label="Data"><?php echo formatarData($atividade['data']); ?></td>
-                                    <td data-label="Horário"><?php echo $atividade['horario']; ?></td>
-                                    <td data-label="Vagas"><?php echo $atividade['vagas']; ?></td>
-                                    <td data-label="Inscritos">
-                                        <?php 
-                                        // Contar inscritos
-                                        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM inscricoes_atividades WHERE atividade_id = :id");
-                                        $stmt->execute([':id' => $atividade['id']]);
-                                        $inscritos = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-                                        echo $inscritos;
-                                        ?>
-                                    </td>
-                                    <td data-label="Confirmada">
-                                        <label class="admin-checkbox">
-                                            <input type="checkbox" class="confirmada-toggle" 
-                                                data-id="<?php echo $atividade['id']; ?>" 
-                                                <?php echo $atividade['ativa'] == '1' ? 'checked' : ''; ?>>
-                                            <span class="checkmark"></span>
-                                        </label>
-                                    </td>
-                                    <td data-label="Ações">
-                                        <button class="btn-primary btn-small" onclick="editarAtividade(<?php echo $atividade['id']; ?>)">Editar</button>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="table-container">
+                    <h3>Atividades Cadastradas</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Tipo</th>
+                                <th>Palestrante</th>
+                                <th>Local</th>
+                                <th>Data</th>
+                                <th>Horário</th>
+                                <th>Vagas</th>
+                                <th>Inscritos</th>
+                                <th>Confirmada</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($atividades as $atividade): ?>
+                            <tr class="<?php echo $atividade['ativa'] == '1' ? '' : 'nao-confirmada'; ?>">
+                                <td><?php echo htmlspecialchars($atividade['titulo']); ?></td>
+                                <td><?php echo ucfirst($atividade['tipo']); ?></td>
+                                <td><?php echo htmlspecialchars($atividade['palestrante']); ?></td>
+                                <td><?php echo htmlspecialchars($atividade['sala']); ?></td>
+                                <td><?php echo formatarData($atividade['data']); ?></td>
+                                <td><?php echo $atividade['horario']; ?></td>
+                                <td><?php echo $atividade['vagas']; ?></td>
+                                <td>
+                                    <?php 
+                                    // Contar inscritos
+                                    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM inscricoes_atividades WHERE atividade_id = :id");
+                                    $stmt->execute([':id' => $atividade['id']]);
+                                    $inscritos = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+                                    echo $inscritos;
+                                    ?>
+                                </td>
+                                <td>
+                                    <label class="admin-checkbox">
+                                        <input type="checkbox" class="confirmada-toggle" 
+                                            data-id="<?php echo $atividade['id']; ?>" 
+                                            <?php echo $atividade['ativa'] == '1' ? 'checked' : ''; ?>>
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <button class="btn-primary btn-small" onclick="editarAtividade(<?php echo $atividade['id']; ?>)">Editar</button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
                 
                 <!-- Modal de Edição de Atividade -->
@@ -2027,63 +1866,51 @@ function formatarDataHora($dataHora) {
             <section id="presencas-section" class="admin-section">
                 <h2>Registrar Presenças</h2>
                 
-                <div class="tabs">
-                    <button class="tab-link active" data-tab="registrar-presenca">Registrar</button>
-                    <button class="tab-link" data-tab="ver-presencas">Ver Presenças</button>
-                </div>
-                
-                <div id="registrar-presenca" class="tab-content active">
-                    <div class="table-container">
-                        <form id="registrar-presenca-form">
-                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                            <input type="hidden" name="action" value="registrar_presenca">
-                            <div class="form-group">
-                                <label for="atividade">Atividade</label>
-                                <select id="atividade" name="atividade_id" required>
-                                    <option value="">Selecione uma atividade</option>
-                                    <?php foreach ($atividades as $atividade): ?>
-                                    <option value="<?php echo $atividade['id']; ?>">
-                                        <?php echo htmlspecialchars($atividade['titulo']) . ' - ' . formatarData($atividade['data']) . ' - ' . $atividade['hora_inicio']; ?>
-                                    </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="codigo_barras">Código de Barras</label>
-                                <input type="text" id="codigo_barras" name="codigo_barras" required autofocus>
-                            </div>
-                            <button type="submit" class="btn-primary">Registrar Presença</button>
-                        </form>
-                    </div>
-                </div>
-                
-                <div id="ver-presencas" class="tab-content">
-                    <h3>Presenças Registradas</h3>
-                    <div class="table-container">
+                <div class="table-container">
+                    <form id="registrar-presenca-form">
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                        <input type="hidden" name="action" value="registrar_presenca">
                         <div class="form-group">
-                            <input type="text" id="busca-presencas" placeholder="Buscar por participante ou atividade...">
-                        </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Participante</th>
-                                    <th>Atividade</th>
-                                    <th>Data</th>
-                                    <th>Presença</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($presencas as $presenca): ?>
-                                <tr>
-                                    <td data-label="Participante"><?php echo htmlspecialchars($presenca['nome']); ?></td>
-                                    <td data-label="Atividade"><?php echo htmlspecialchars($presenca['titulo']); ?></td>
-                                    <td data-label="Data"><?php echo formatarDataHora($presenca['data_hora']); ?></td>
-                                    <td data-label="Presença"><span class="status-approved">Confirmada</span></td>
-                                </tr>
+                            <label for="atividade">Atividade</label>
+                            <select id="atividade" name="atividade_id" required>
+                                <option value="">Selecione uma atividade</option>
+                                <?php foreach ($atividades as $atividade): ?>
+                                <option value="<?php echo $atividade['id']; ?>">
+                                    <?php echo htmlspecialchars($atividade['titulo']) . ' - ' . formatarData($atividade['data']) . ' - ' . $atividade['hora_inicio']; ?>
+                                </option>
                                 <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="codigo_barras">Código de Barras</label>
+                            <input type="text" id="codigo_barras" name="codigo_barras" required autofocus>
+                        </div>
+                        <button type="submit" class="btn-primary">Registrar Presença</button>
+                    </form>
+                </div>
+                
+                <h3>Presenças Registradas</h3>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Participante</th>
+                                <th>Atividade</th>
+                                <th>Data</th>
+                                <th>Presença</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($presencas as $presenca): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($presenca['nome']); ?></td>
+                                <td><?php echo htmlspecialchars($presenca['titulo']); ?></td>
+                                <td><?php echo formatarDataHora($presenca['data_hora']); ?></td>
+                                <td><span class="status-approved">Confirmada</span></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </section>
             
@@ -2092,9 +1919,6 @@ function formatarDataHora($dataHora) {
                 <h2>Validação de Comprovantes</h2>
                 
                 <div class="table-container">
-                    <div class="form-group">
-                        <input type="text" id="busca-comprovantes" placeholder="Buscar por participante...">
-                    </div>
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -2108,9 +1932,9 @@ function formatarDataHora($dataHora) {
                         <tbody>
                             <?php foreach ($comprovantes as $comprovante): ?>
                             <tr>
-                                <td data-label="Participante"><?php echo htmlspecialchars($comprovante['participante_nome']); ?></td>
-                                <td data-label="Data Envio"><?php echo formatarDataHora($comprovante['data_envio']); ?></td>
-                                <td data-label="Status">
+                                <td><?php echo htmlspecialchars($comprovante['participante_nome']); ?></td>
+                                <td><?php echo formatarDataHora($comprovante['data_envio']); ?></td>
+                                <td>
                                     <?php if ($comprovante['status'] == 'aprovado'): ?>
                                         <span class="status-approved">Aprovado</span>
                                     <?php elseif ($comprovante['status'] == 'rejeitado'): ?>
@@ -2119,10 +1943,10 @@ function formatarDataHora($dataHora) {
                                         <span class="status-pending">Pendente</span>
                                     <?php endif; ?>
                                 </td>
-                                <td data-label="Comprovante">
+                                <td>
                                     <button class="btn-primary btn-small" onclick="verComprovante(<?php echo $comprovante['id']; ?>)">Visualizar</button>
                                 </td>
-                                <td data-label="Ações">
+                                <td>
                                     <?php if ($comprovante['status'] == 'pendente'): ?>
                                         <button class="btn-primary btn-small" onclick="validarPagamento(<?php echo $comprovante['id']; ?>, true)">Aprovar</button>
                                         <button class="btn-primary btn-small" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" onclick="validarPagamento(<?php echo $comprovante['id']; ?>, false)">Rejeitar</button>
@@ -2171,14 +1995,11 @@ function formatarDataHora($dataHora) {
         </div>
     </footer>
 
-    <!-- Scripts -->
+    <!-- Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
     <!-- JsBarcode para gerar códigos de barras -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <!-- InputMask para máscaras -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.6/jquery.inputmask.min.js"></script>
     <script>
         // Inicializar Flatpickr para campos de data e hora
         document.addEventListener('DOMContentLoaded', function() {
@@ -2212,75 +2033,8 @@ function formatarDataHora($dataHora) {
                 minuteIncrement: 1
             });
             
-            // Máscaras para CPF e telefone
-            $('#novo-cpf, #edit-cpf').inputmask('999.999.999-99');
-            $('#novo-telefone, #edit-telefone').inputmask('(99) 99999-9999');
-            
-            // Inicializar tabs
-            document.querySelectorAll('.tab-link').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabId = tab.getAttribute('data-tab');
-                    
-                    // Desativar todas as tabs
-                    document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    
-                    // Ativar tab clicada
-                    tab.classList.add('active');
-                    document.getElementById(tabId).classList.add('active');
-                });
-            });
-            
-            // Busca em tempo real
-            document.getElementById('busca-participantes').addEventListener('input', function() {
-                const termo = this.value.toLowerCase();
-                const linhas = document.querySelectorAll('#ver-participantes .data-table tbody tr');
-                
-                linhas.forEach(linha => {
-                    const textoLinha = linha.textContent.toLowerCase();
-                    linha.style.display = textoLinha.includes(termo) ? '' : 'none';
-                });
-            });
-            
-            document.getElementById('busca-atividades').addEventListener('input', function() {
-                const termo = this.value.toLowerCase();
-                const linhas = document.querySelectorAll('#ver-atividades .data-table tbody tr');
-                
-                linhas.forEach(linha => {
-                    const textoLinha = linha.textContent.toLowerCase();
-                    linha.style.display = textoLinha.includes(termo) ? '' : 'none';
-                });
-            });
-            
-            document.getElementById('busca-presencas').addEventListener('input', function() {
-                const termo = this.value.toLowerCase();
-                const linhas = document.querySelectorAll('#ver-presencas .data-table tbody tr');
-                
-                linhas.forEach(linha => {
-                    const textoLinha = linha.textContent.toLowerCase();
-                    linha.style.display = textoLinha.includes(termo) ? '' : 'none';
-                });
-            });
-            
-            document.getElementById('busca-comprovantes').addEventListener('input', function() {
-                const termo = this.value.toLowerCase();
-                const linhas = document.querySelectorAll('#comprovantes-section .data-table tbody tr');
-                
-                linhas.forEach(linha => {
-                    const textoLinha = linha.textContent.toLowerCase();
-                    linha.style.display = textoLinha.includes(termo) ? '' : 'none';
-                });
-            });
+            // Configuração para o formulário de edição (será inicializado quando o modal for aberto)
         });
-        
-        // Função para exibir mensagens inline
-        function exibirMensagem(mensagem, tipo) {
-            const divMensagem = document.getElementById('mensagem');
-            divMensagem.innerHTML = `<div class="message ${tipo}">${mensagem}</div>`;
-            setTimeout(() => {
-                divMensagem.innerHTML = '';
-            }, 5000);
-        }
         
         // Navegação do painel de admin com histórico
         document.querySelectorAll('.admin-nav').forEach(link => {
@@ -2468,7 +2222,7 @@ function formatarDataHora($dataHora) {
             const repitaSenha = document.getElementById('novo-repita_senha').value;
             
             if (senha !== repitaSenha) {
-                exibirMensagem('As senhas não coincidem!', 'erro');
+                alert('As senhas não coincidem!');
                 return;
             }
             
@@ -2481,19 +2235,15 @@ function formatarDataHora($dataHora) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    exibirMensagem('Participante cadastrado com sucesso!', 'sucesso');
+                    alert('Participante cadastrado com sucesso!');
                     this.reset();
-                    // Recarregar a lista de participantes
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
+                    location.reload();
                 } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
+                    alert('Erro: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao cadastrar participante.', 'erro');
             });
         });
         
@@ -2532,12 +2282,11 @@ function formatarDataHora($dataHora) {
                     
                     abrirModal('editar-participante-modal');
                 } else {
-                    exibirMensagem('Erro ao carregar dados: ' + data.message, 'erro');
+                    alert('Erro ao carregar dados: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao carregar dados do participante.', 'erro');
             });
         }
         
@@ -2554,19 +2303,15 @@ function formatarDataHora($dataHora) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    exibirMensagem('Dados atualizados com sucesso!', 'sucesso');
+                    alert('Dados atualizados com sucesso!');
                     fecharModal('editar-participante-modal');
-                    // Recarregar a página para atualizar a lista
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
+                    location.reload();
                 } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
+                    alert('Erro: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao atualizar participante.', 'erro');
             });
         });
         
@@ -2592,16 +2337,13 @@ function formatarDataHora($dataHora) {
                 .then(response => response.json())
                 .then(data => {
                     if (!data.success) {
-                        exibirMensagem('Erro: ' + data.message, 'erro');
+                        alert('Erro: ' + data.message);
                         this.checked = !isAdmin;
-                    } else {
-                        exibirMensagem('Status de administrador atualizado', 'sucesso');
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
                     this.checked = !isAdmin;
-                    exibirMensagem('Erro ao atualizar status.', 'erro');
                 });
             });
         });
@@ -2625,7 +2367,7 @@ function formatarDataHora($dataHora) {
                 .then(response => response.json())
                 .then(data => {
                     if (!data.success) {
-                        exibirMensagem('Erro: ' + data.message, 'erro');
+                        alert('Erro: ' + data.message);
                         this.checked = !this.checked;
                     } else {
                         // Atualizar a cor da linha
@@ -2635,13 +2377,11 @@ function formatarDataHora($dataHora) {
                         } else {
                             linha.classList.add('nao-confirmada');
                         }
-                        exibirMensagem('Status da atividade atualizado', 'sucesso');
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
                     this.checked = !this.checked;
-                    exibirMensagem('Erro ao atualizar status.', 'erro');
                 });
             });
         });
@@ -2666,19 +2406,15 @@ function formatarDataHora($dataHora) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    exibirMensagem('Atividade cadastrada com sucesso!', 'sucesso');
+                    alert('Atividade cadastrada com sucesso!');
                     this.reset();
-                    // Recarregar a página para atualizar a lista
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
+                    location.reload();
                 } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
+                    alert('Erro: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao cadastrar atividade.', 'erro');
             });
         });
         
@@ -2759,12 +2495,11 @@ function formatarDataHora($dataHora) {
                     
                     abrirModal('editar-atividade-modal');
                 } else {
-                    exibirMensagem('Erro ao carregar dados: ' + data.message, 'erro');
+                    alert('Erro ao carregar dados: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao carregar dados da atividade.', 'erro');
             });
         }
         
@@ -2788,19 +2523,15 @@ function formatarDataHora($dataHora) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    exibirMensagem('Atividade atualizada com sucesso!', 'sucesso');
+                    alert('Atividade atualizada com sucesso!');
                     fecharModal('editar-atividade-modal');
-                    // Recarregar a página para atualizar a lista
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
+                    location.reload();
                 } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
+                    alert('Erro: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao atualizar atividade.', 'erro');
             });
         });
         
@@ -2817,20 +2548,23 @@ function formatarDataHora($dataHora) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    exibirMensagem('Presença registrada com sucesso!', 'sucesso');
+                    alert('Presença registrada com sucesso!');
                     this.reset();
                     document.getElementById('codigo_barras').focus();
+                    // Recarregar a página para atualizar a lista de presenças
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
                 } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
+                    alert('Erro: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao registrar presença.', 'erro');
             });
         });
         
-        // Validar pagamento via AJAX
+        // Validar pagamento
         function validarPagamento(id, aprovado) {
             if (!confirm(`Tem certeza que deseja ${aprovado ? 'aprovar' : 'reprovar'} este comprovante?`)) {
                 return;
@@ -2849,19 +2583,14 @@ function formatarDataHora($dataHora) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Atualizar a linha da tabela sem recarregar
-                    const linha = document.querySelector(`tr:has(button[onclick="validarPagamento(${id}, ${aprovado})"])`)                      ;
-                    linha.cells[2].innerHTML = aprovado ? '<span class="status-approved">Aprovado</span>' : '<span class="status-rejected">Rejeitado</span>';
-                    linha.cells[4].innerHTML = '<span>Processado</span>';
-                    
-                    exibirMensagem('Validação atualizada com sucesso!', 'sucesso');
+                    alert('Validação atualizada com sucesso!');
+                    location.reload();
                 } else {
-                    exibirMensagem('Erro: ' + data.message, 'erro');
+                    alert('Erro: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao validar pagamento. Erro: ' + data.message, 'erro');
             });
         }
         
@@ -2934,12 +2663,11 @@ function formatarDataHora($dataHora) {
                     
                     abrirJanelaCracha(data.participante, tipo, barcodeDataURL);
                 } else {
-                    exibirMensagem('Erro ao carregar dados do participante', 'erro');
+                    alert('Erro ao carregar dados do participante');
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                exibirMensagem('Erro ao carregar dados do participante.', 'erro');
             });
         }
 
@@ -3045,7 +2773,8 @@ function formatarDataHora($dataHora) {
                         <div class="cracha-tipo">${tipo.toUpperCase()}</div>
                         ${barcodeHTML}
                         <div class="cracha-footer">
-                            Evento: 28 a 31 de Agosto de 2025
+                            Evento: 20-22 Março 2025<br>
+                            Curso de Análise e Desenvolvimento de Sistemas
                         </div>
                     </div>
                 </body>

@@ -222,7 +222,6 @@
         
         .menu.active {
             display: flex;
-            display: flex;
         }
         
         .menu li {
@@ -511,17 +510,6 @@
         @media (min-width: 992px) {
             .about-highlights {
                 grid-template-columns: repeat(4, 1fr);
-                margin-left: 25px;
-                min-width: 400px;
-                width: 400px;
-            }
-            
-            .about-content {
-                flex-direction: row;
-            }
-            
-            .about-text {
-                flex: 1;
             }
         }
         
@@ -1017,119 +1005,6 @@
             color: var(--success-color);
         }
         
-        /* Preços */
-        .pricing-section {
-            padding: 40px 0;
-        }
-        
-        .pricing-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 25px;
-            margin-top: 30px;
-        }
-        
-        @media (min-width: 768px) {
-            .pricing-container {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        .pricing-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 25px;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(0, 191, 99, 0.1);
-        }
-        
-        .light-theme .pricing-card {
-            box-shadow: 0 0 15px rgba(45, 125, 90, 0.1);
-        }
-        
-        .pricing-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0 25px rgba(0, 255, 0, 0.3);
-            border-color: var(--neon-green);
-        }
-        
-        .light-theme .pricing-card:hover {
-            box-shadow: 0 0 25px rgba(45, 125, 90, 0.2);
-            border-color: var(--accent-color);
-        }
-        
-        .pricing-header {
-            margin-bottom: 20px;
-        }
-        
-        .pricing-header h3 {
-            color: var(--neon-green);
-            font-size: 1.4rem;
-            margin-bottom: 10px;
-        }
-        
-        .light-theme .pricing-header h3 {
-            color: var(--accent-color);
-        }
-        
-        .pricing-badge {
-            display: inline-block;
-            background: rgba(0, 191, 99, 0.2);
-            color: var(--neon-green);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-        
-        .light-theme .pricing-badge {
-            background: rgba(45, 125, 90, 0.1);
-            color: var(--accent-color);
-        }
-        
-        .pricing-price {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: var(--text-color);
-            margin: 15px 0;
-        }
-        
-        .pricing-price span {
-            font-size: 1rem;
-            font-weight: 500;
-        }
-        
-        .pricing-features {
-            list-style: none;
-            margin: 20px 0;
-            text-align: left;
-        }
-        
-        .pricing-features li {
-            margin-bottom: 10px;
-            color: var(--light-gray);
-            display: flex;
-            align-items: center;
-        }
-        
-        .pricing-features li i {
-            color: var(--neon-green);
-            margin-right: 10px;
-        }
-        
-        .light-theme .pricing-features li i {
-            color: var(--accent-color);
-        }
-        
-        .pricing-note {
-            font-size: 0.85rem;
-            color: var(--light-gray);
-            font-style: italic;
-            margin-top: 15px;
-        }
-        
         /* Media Queries para tablets e desktops */
         @media (min-width: 768px) {
             .menu-toggle {
@@ -1238,7 +1113,6 @@
                 <ul class="menu">
                     <li><a href="#sobre">Sobre</a></li>
                     <li><a href="#programacao">Programação</a></li>
-                    <li><a href="#valores">Valores</a></li>
                     <li><a href="#inscricao" class="vermelho">Inscrições</a></li>
                     <li><a href="#login">Login</a></li>
                     <li><a href="#organizacao">Organização</a></li>
@@ -1355,59 +1229,7 @@
         </div>
     </section>
 
-    <!-- Valores -->
-    <section id="valores" class="pricing-section">
-        <div class="container">
-            <div class="section-title">
-                <h2>Valores de Inscrição</h2>
-                <p>Confira os valores para participar da 1ª TechWeek</p>
-            </div>
-            
-            <div class="pricing-container">
-                <div class="pricing-card">
-                    <div class="pricing-header">
-                        <h3>Evento Principal</h3>
-                        <div class="pricing-badge">1° Lote</div>
-                    </div>
-                    
-                    <div class="pricing-price">
-                        <span>A partir de</span>
-                        R$15
-                    </div>
-                    
-                    <ul class="pricing-features">
-                        <li><i class="fas fa-check-circle"></i>Universitário de TI: R$25</li>
-                        <li><i class="fas fa-check-circle"></i>Ensino médio: R$15</li>
-                        <li><i class="fas fa-check-circle"></i>Público geral: R$50</li>
-                        <li><i class="fas fa-check-circle"></i>Acesso a todas as palestras, workshops e oficinas.</li>
-                        <li><i class="fas fa-check-circle"></i>Certificado de participação</li>
-                    </ul>
-                </div>
-                
-                <div class="pricing-card">
-                    <div class="pricing-header">
-                        <h3>Hackaton</h3>
-                        <div class="pricing-badge">Competição</div>
-                    </div>
-                    
-                    <div class="pricing-price">
-                        <span>A partir de</span>
-                        R$15
-                    </div>
-                    
-                    <ul class="pricing-features">
-                        <li><i class="fas fa-check-circle"></i>Para inscritos no evento: R$15 por pessoa</li>
-                        <li><i class="fas fa-check-circle"></i>Para não inscritos: R$50 por pessoa</li>
-                        <li><i class="fas fa-check-circle"></i>Premiação para os melhores projetos</li>
-                        <li><i class="fas fa-check-circle"></i>Mentoria durante o evento</li>
-                        <li><i class="fas fa-check-circle"></i>Certificado de participação</li>
-                    </ul>
-                    
-                    <p class="pricing-note">* Valores sujeitos a alteração sem aviso prévio</p>
-                </div>
-            </div>
-        </div>
-    </section>
+
 
     <!-- Inscrição -->
     <section id="inscricao">
@@ -1472,7 +1294,7 @@
                                     <h3>1. FINALIDADE DO TRATAMENTO</h3>
                                     <p>Os dados pessoais coletados serão utilizados exclusivamente para:</p>
                                     <ul>
-                                        <li>Identificação and inscrição no evento;</li>
+                                        <li>Identificação e inscrição no evento;</li>
                                         <li>Emissão de certificados de participação (o CPF é necessário para validar os certificados);</li>
                                         <li>Envio de comunicados relativos ao evento, incluindo o envio do certificado por e-mail;</li>
                                         <li>Login no sistema do evento.</li>
@@ -1491,7 +1313,7 @@
                                 
                                 <div class="terms-section">
                                     <h3>4. DIVULGAÇÃO A TERCEIROS</h3>
-                                    <p>Os dados coletados não serão comercializados, compartilhados ou divulgados a terceiros, exceto quando necessário para o cumprimento de obrigação legal or determinação judicial.</p>
+                                    <p>Os dados coletados não serão comercializados, compartilhados ou divulgados a terceiros, exceto quando necessário para o cumprimento de obrigação legal ou determinação judicial.</p>
                                 </div>
                                 
                                 <div class="terms-section">
@@ -1586,7 +1408,7 @@
                     <img src="imagens/casis.png" alt="CASIS" style="max-height: 70px;">
                 </div>
                 <div class="sponsor-card">
-                    <img src="imagens/nubetec.png" alt="Nubetec" style="max-height: 70px;">
+                    <img src="https://www.acefb.com.br/Thumb.aspx?img=arquivos/media/nucleos/logos/nucleo-beltronense-das-empresas-de-tecnologia-da-informacao.jpg&w=190&h=145&c=0" alt="Nubetec" style="max-height: 70px;">
                 </div>
                 <div class="sponsor-card">
                     <img src="imagens/typex.png" alt="TypeX" style="max-height: 70px;">
@@ -1955,6 +1777,8 @@
                 themeIcon.classList.add('fa-sun');
             } else {
                 localStorage.setItem('theme', 'dark');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
             }
         });
         
@@ -2045,7 +1869,7 @@
                 }
             })
             .catch(error => {
-                // Esconder o indicador de carregamento and mostrar erro
+                // Esconder o indicador de carregamento e mostrar erro
                 document.getElementById('programacao-loading').style.display = 'none';
                 document.getElementById('programacao-erro').style.display = 'block';
                 console.error('Erro na requisição:', error);
