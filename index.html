@@ -470,7 +470,7 @@
             font-style: italic;
         }
         
-        /* Sobre */
+        /* Sobre - MODIFICADO */
         .about-content {
             display: flex;
             flex-direction: column;
@@ -483,6 +483,7 @@
             border-radius: 10px;
             border: 1px solid var(--border-color);
             box-shadow: 0 0 20px rgba(0, 191, 99, 0.2);
+            margin-bottom: 25px;
         }
         
         .light-theme .about-text {
@@ -500,6 +501,7 @@
             display: grid;
             grid-template-columns: 1fr;
             gap: 15px;
+            margin-top: 20px;
         }
         
         @media (min-width: 768px) {
@@ -511,17 +513,6 @@
         @media (min-width: 992px) {
             .about-highlights {
                 grid-template-columns: repeat(4, 1fr);
-                margin-left: 25px;
-                min-width: 400px;
-                width: 400px;
-            }
-            
-            .about-content {
-                flex-direction: row;
-            }
-            
-            .about-text {
-                flex: 1;
             }
         }
         
@@ -1173,11 +1164,6 @@
                 font-size: 2.2rem;
             }
             
-            .about-content {
-                flex-direction: row;
-                gap: 25px;
-            }
-            
             .programacao-table {
                 min-width: 100%;
             }
@@ -1272,7 +1258,7 @@
     </div>
 
 
-    <!-- Sobre -->
+    <!-- Sobre - MODIFICADO -->
     <section id="sobre">
         <div class="container">
             <div class="section-title">
@@ -1303,7 +1289,7 @@
                     <div class="highlight-card">
                         <i class="fas fa-users"></i>
                         <h3>Público</h3>
-                        <p>Estudantes, profissionais e entusiastas de TI</p>
+                        <p>Estudantes, profissionais and entusiastas de TI</p>
                     </div>
                     
                     <div class="highlight-card">
@@ -1379,7 +1365,7 @@
                         <li><i class="fas fa-check-circle"></i>Universitário de TI: R$25</li>
                         <li><i class="fas fa-check-circle"></i>Ensino médio: R$15</li>
                         <li><i class="fas fa-check-circle"></i>Público geral: R$50</li>
-                        <li><i class="fas fa-check-circle"></i>Acesso a todas as palestras, workshops e oficinas.</li>
+                        <li><i class="fas fa-check-circle"></i>Acesso a todas as palestras</li>
                         <li><i class="fas fa-check-circle"></i>Certificado de participação</li>
                     </ul>
                 </div>
@@ -1473,7 +1459,7 @@
                                     <p>Os dados pessoais coletados serão utilizados exclusivamente para:</p>
                                     <ul>
                                         <li>Identificação and inscrição no evento;</li>
-                                        <li>Emissão de certificados de participação (o CPF é necessário para validar os certificados);</li>
+                                        <li>Emissão de certificados de participação (o CPF is necessário para validar os certificados);</li>
                                         <li>Envio de comunicados relativos ao evento, incluindo o envio do certificado por e-mail;</li>
                                         <li>Login no sistema do evento.</li>
                                     </ul>
@@ -1838,7 +1824,7 @@
             }
         });
         
-        // Toggle entre formulário de login e recuperação de senha
+        // Toggle entre formulário de login and recuperação de senha
         document.getElementById('recuperar-senha').addEventListener('click', function(e) {
             e.preventDefault();
             document.getElementById('login-form').style.display = 'none';
