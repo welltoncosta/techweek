@@ -1204,31 +1204,37 @@ function formatarDataHora($dataHora) {
             color: var(--accent-color);
         }
         
-        /* Footer */
-        footer {
-            background: var(--black);
-            padding: 30px 0 15px;
-            border-top: 1px solid var(--border-color);
-            margin-top: auto;
-        }
+    /* Ajustes para o rodapé */
+footer {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    text-align: center;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+/* Ajuste para telas menores onde o menu lateral some */
+@media (max-width: 1200px) {
+    footer {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
         
         .light-theme footer {
             background: var(--dark-gray);
         }
         
-        .footer-content {
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            margin-bottom: 25px;
-        }
-        
-        .footer-logo {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+
+.footer-logo, .footer-info {
+    text-align: center; /* Garante que o texto dentro dessas divs também esteja centralizado */
+}
         
         .footer-logo img {
             max-width: 130px;
@@ -1696,9 +1702,9 @@ tr[data-preco-id].deleting {
             <section id="participantes-section" class="admin-section">
                 <h2>Gerenciar Participantes</h2>
                 
-                <div class="tabs">
-                    <button class="tab-link active" data-tab="cadastrar-participante">Cadastrar</button>
-                    <button class="tab-link" data-tab="ver-participantes">Ver Participantes</button>
+                <div class="tabs">                    
+                    <button class="tab-link active" data-tab="ver-participantes">Ver Participantes</button>
+                    <button class="tab-link" data-tab="cadastrar-participante">Cadastrar</button>
                 </div>
                 
                 <div id="cadastrar-participante" class="tab-content active">
@@ -1880,8 +1886,8 @@ tr[data-preco-id].deleting {
                 <h2>Gerenciar Atividades</h2>
                 
                 <div class="tabs">
-                    <button class="tab-link active" data-tab="cadastrar-atividade">Cadastrar</button>
-                    <button class="tab-link" data-tab="ver-atividades">Ver Atividades</button>
+                    <button class="tab-link active" data-tab="ver-atividades">Ver Atividades</button>
+                    <button class="tab-link" data-tab="cadastrar-atividade">Cadastrar</button>
                 </div>
                 
                 <div id="cadastrar-atividade" class="tab-content active">
@@ -2215,9 +2221,9 @@ tr[data-preco-id].deleting {
     </div>
     
     <div class="tabs">
-        <button class="tab-link active" data-tab="adicionar-transacao">Adicionar Transação</button>
-        <button class="tab-link" data-tab="lista-transacoes">Lista de Transações</button>
-	<button class="tab-link" data-tab="gerenciar-precos">Gerenciar Preços</button>
+        <button class="tab-link active" data-tab="lista-transacoes">Lista de Transações</button>
+        <button class="tab-link" data-tab="adicionar-transacao">Adicionar Transação</button>
+	    <button class="tab-link" data-tab="gerenciar-precos">Gerenciar Preços</button>
     </div>
     
     <div id="adicionar-transacao" class="tab-content active">
@@ -2413,12 +2419,14 @@ tr[data-preco-id].deleting {
                     <img src="imagens/logo-light.jpg" alt="Logo Tech Week" class="footer-logo-light">
                 </div>
                 <div class="footer-info">
-                    <h3>1ª TechWeek</h3>
-                    <p>Organização: Curso de Análise e Desenvolvimento de Sistemas</p>
+                    <h3>1ª TechWeek - 28 a 31 de Outubro de 2025</h3>
+                    <p>Organização: UTFPR, COSIS, CASIS, TypeX, Nubetec, CESUL</p>
                     <p>Contato: techweek@example.com</p>
                 </div>
             </div>
             <div class="footer-bottom">
+                <p>Implementado por Wellton Costa de Oliveira</p>
+                <p>Identidade Visual por David Junior</p>
                 <p>&copy; 2025 1ª TechWeek - Todos os direitos reservados.</p>
             </div>
         </div>
