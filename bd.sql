@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Aug 29, 2025 at 06:19 PM
+-- Generation Time: Aug 29, 2025 at 08:10 PM
 -- Server version: 11.8.2-MariaDB-1 from Debian
 -- PHP Version: 8.4.11
 
@@ -20,8 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `techweek`
 --
-CREATE DATABASE IF NOT EXISTS `techweek` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
-USE `techweek`;
 
 -- --------------------------------------------------------
 
@@ -50,10 +48,12 @@ CREATE TABLE `atividades` (
 --
 
 INSERT INTO `atividades` (`id`, `titulo`, `tipo`, `palestrante`, `singular_plural`, `sala`, `vagas`, `data`, `horario`, `ativa`, `hora_inicio`, `hora_fim`, `hash`) VALUES
-(1, 'Recepção', 'credenciamento', 'CASIS e Voluntários	', NULL, 'Hall de entrada (Bloco A)', '20', '2025-08-26', NULL, '1', '14:48', '12:45', NULL),
-(2, 'Apresentação da Orquestra da UTFPR	', 'workshop', 'Orquestra da UTFPR	', NULL, 'Anfiteatro (Bloco A)', '200', '2025-08-26', '20:55 - 22:55', '1', '20:55', '22:55', NULL),
-(3, 'Palestra: Como programar um computador quântico', 'palestra', 'Evandro C. R. da Rosa (Co-fundador da Quantuloop, start-up brasileira de computação quântica, e membro do Grupo de Computação Quântica da UFSC (GCQ-UFSC))', NULL, 'Anfiteatro (Bloco A)', '200', '2025-08-27', NULL, '1', '13:02', '13:03', NULL),
-(4, 'TESTABDIII', 'workshop', 'teste', NULL, 'teste', '33', '2025-08-25', '08:00 - 12:00', '1', '08:00', '12:00', NULL);
+(1, 'Recepção', 'oficina', 'CASIS e Voluntários	', NULL, 'Hall de entrada (Bloco A)', '20', '2025-08-26', '14:48 - 12:45', '1', '14:48', '12:45', NULL),
+(2, 'Apresentação da Orquestra da UTFPR	', 'oficina', 'Orquestra da UTFPR	', NULL, 'Anfiteatro (Bloco A)', '200', '2025-08-26', '20:55 - 22:55', '1', '20:55', '22:55', NULL),
+(3, 'Palestra: Como programar um computador quântico', 'palestra', 'Evandro C. R. da Rosa (Co-fundador da Quantuloop, start-up brasileira de computação quântica, e membro do Grupo de Computação Quântica da UFSC (GCQ-UFSC))', NULL, 'Anfiteatro (Bloco A)', '200', '2025-08-27', NULL, '0', '13:02', '13:03', NULL),
+(4, 'TESTABDIII', 'credenciamento', 'teste', NULL, 'espaço da arte', '33', '2025-08-25', '08:00 - 12:00', '0', '08:00', '12:00', NULL);
+
+
 
 -- --------------------------------------------------------
 
@@ -116,7 +116,11 @@ INSERT INTO `comprovantes` (`id`, `participante_id`, `arquivo`, `tipo_arquivo`, 
 (10, 8, 'comprovantes/68b1eb18a0b205.02224311.png', 'imagem', 'aprovado', NULL, '2025-08-29 18:02:00', '2025-08-29 18:03:03'),
 (11, 7, 'comprovantes/68b1eb7e8d1bd9.21509189.png', 'imagem', 'aprovado', NULL, '2025-08-29 18:03:42', '2025-08-29 18:04:10'),
 (12, 9, 'comprovantes/68b1ee99e78279.61607144.png', 'imagem', 'rejeitado', NULL, '2025-08-29 18:16:57', '2025-08-29 18:17:13'),
-(13, 10, 'comprovantes/68b1ef329bf554.24431036.png', 'imagem', 'rejeitado', NULL, '2025-08-29 18:19:30', '2025-08-29 18:19:39');
+(13, 10, 'comprovantes/68b1ef329bf554.24431036.png', 'imagem', 'rejeitado', NULL, '2025-08-29 18:19:30', '2025-08-29 18:19:39'),
+(14, 10, 'comprovantes/68b1ef4c573ee8.75764046.png', 'imagem', 'rejeitado', NULL, '2025-08-29 18:19:56', '2025-08-29 18:20:06'),
+(15, 10, 'comprovantes/68b1ef65e790f0.42583983.pdf', 'pdf', 'aprovado', NULL, '2025-08-29 18:20:21', '2025-08-29 18:20:31'),
+(16, 11, 'comprovantes/68b1efab7d3463.18363602.pdf', 'pdf', 'aprovado', NULL, '2025-08-29 18:21:31', '2025-08-29 18:21:49'),
+(17, 12, 'comprovantes/68b1f01689c427.80415985.pdf', 'pdf', 'aprovado', NULL, '2025-08-29 18:23:18', '2025-08-29 18:24:01');
 
 -- --------------------------------------------------------
 
@@ -179,7 +183,10 @@ INSERT INTO `participantes` (`id`, `administrador`, `tipo`, `tipo_inscricao`, `l
 (7, 0, 'participante', 'universitario_ti', '1', 25.00, '2a50246b0dff8906287321a130972b1c', 'teste3', 'teste3@teste.com', '$2y$12$NeUso/44he1B1OOHlk4Or.VImMTi5aVcmnQdZCZiYZm20TqBF4XDG', '073.503.112-65', 'TW20250007', '', '', 25.00, NULL, 0, '2025-08-29 17:58:19'),
 (8, 0, 'participante', 'publico_geral', 'regular', NULL, '2ae5281e00f5c2d89b258201914404a8', 'pessoa externa para nao contabilizar no numero', 'aa@aa.com', '$2y$12$fVcPkxQOhgdA6r8xkLYZd.StbPMmHIiMo5u4pJQco/skYouqJq0NO', '715.541.050-05', 'TW20250008', '', '', 0.00, NULL, 0, '2025-08-29 17:59:04'),
 (9, 0, 'participante', 'universitario_ti', '1', NULL, '300ba577ce238575bb0be837caa291aa', 'teste 4', 'teste4@teste.com', '$2y$12$IKa1iy2CuXNoUecVi4dKXuPP.lyaoGta/3uckMD7gfSVGDCPS3pia', '289.802.348-56', 'TW20250009', '', '', 25.00, NULL, 0, '2025-08-29 18:16:36'),
-(10, 0, 'participante', 'universitario_ti', '1', NULL, '4be36b38d464fe4f30d1247ea6b5c00f', 'estudante de ti ti', 'ti@ti.com', '$2y$12$gKd3J.w/vXhpPupepczrx.pid41XwxycE77Y4SbexxfLciivTUqDi', '170.193.850-28', 'TW20250010', '', '', 25.00, NULL, 0, '2025-08-29 18:19:07');
+(10, 0, 'participante', 'universitario_ti', '1', 25.00, '4be36b38d464fe4f30d1247ea6b5c00f', 'estudante de ti ti', 'ti@ti.com', '$2y$12$gKd3J.w/vXhpPupepczrx.pid41XwxycE77Y4SbexxfLciivTUqDi', '170.193.850-28', 'TW20250010', '', '', 25.00, NULL, 0, '2025-08-29 18:19:07'),
+(11, 0, 'participante', 'ensino_medio', 'regular', NULL, '2d222ef5ceb75a500891b89426fd9dff', 'estudante de EM', 'em@em.com', '$2y$12$FfEbYnLKtky2bXxs62K.FO42AflvyC/8vng5CGeD/RDePVEhwbJi.', '262.044.830-13', 'TW20250011', '', '', 0.00, NULL, 0, '2025-08-29 18:21:18'),
+(12, 0, 'participante', 'publico_geral', 'regular', NULL, '0c6a90c4f7fb28732a366b1eecc38284', 'externo', 'ex@ex.com', '$2y$12$2YkQbaCwz8KAClxcJTX0KObsOYK8C2vnCjhNwSMHBlyXBZvX2Yu6W', '011.863.760-66', 'TW20250012', '', '', 0.00, NULL, 0, '2025-08-29 18:22:56'),
+(13, 0, 'participante', 'publico_geral', 'regular', NULL, 'e8974bd3de45d4e23b33bf46107839ed', 'publico geral', 'publico@geral.com', '$2y$12$M2brni7LAybI2Kmfhhlq7uXekML0On0mALNcVJMwalCsHaWLxxLCa', '888.311.901-05', 'TW20250013', '', '', 0.00, NULL, 0, '2025-08-29 19:12:00');
 
 -- --------------------------------------------------------
 
@@ -249,7 +256,9 @@ INSERT INTO `transacoes` (`id`, `categoria_id`, `descricao`, `valor`, `data`, `t
 (1, 1, 'Pagamento de inscrição - participante', 25.00, '2025-08-29', 'entrada', 2, 2, '2025-08-29 17:23:40'),
 (2, 1, 'Pagamento de inscrição - participante', 25.00, '2025-08-29', 'entrada', 1, 1, '2025-08-29 17:23:42'),
 (3, 1, 'Pagamento de inscrição - administrador', 25.00, '2025-08-29', 'entrada', 3, 2, '2025-08-29 17:32:55'),
-(4, 1, 'Pagamento de inscrição - participante', 50.00, '2025-08-29', 'entrada', 4, 3, '2025-08-29 17:36:53');
+(4, 1, 'Pagamento de inscrição - participante', 50.00, '2025-08-29', 'entrada', 4, 3, '2025-08-29 17:36:53'),
+(5, 1, 'soma das TI', 200.00, '29/08/2025', 'entrada', NULL, NULL, '2025-08-29 18:25:31'),
+(6, 7, 'cafe loko da iraci', 5000.00, '29/08/2025', 'saida', NULL, NULL, '2025-08-29 18:44:31');
 
 --
 -- Indexes for dumped tables
@@ -325,7 +334,7 @@ ALTER TABLE `categorias_transacoes`
 -- AUTO_INCREMENT for table `comprovantes`
 --
 ALTER TABLE `comprovantes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `inscricoes_atividades`
@@ -337,7 +346,7 @@ ALTER TABLE `inscricoes_atividades`
 -- AUTO_INCREMENT for table `participantes`
 --
 ALTER TABLE `participantes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `precos_inscricao`
@@ -349,7 +358,7 @@ ALTER TABLE `precos_inscricao`
 -- AUTO_INCREMENT for table `transacoes`
 --
 ALTER TABLE `transacoes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Constraints for dumped tables
