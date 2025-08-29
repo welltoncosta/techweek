@@ -1206,6 +1206,45 @@
                 order: 3;
             }
         }
+        
+/* Estilos para o card de informações do sistema de lotes */
+.pricing-card[style*="grid-column: 1 / -1"] {
+    text-align: left;
+}
+
+.pricing-card[style*="grid-column: 1 / -1"] .pricing-header {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.pricing-card[style*="grid-column: 1 / -1"] ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin: 15px 0;
+}
+
+.pricing-card[style*="grid-column: 1 / -1"] li {
+    margin-bottom: 8px;
+    color: var(--light-gray);
+}
+
+/* Melhorar a responsividade */
+@media (min-width: 768px) {
+    .pricing-card[style*="grid-column: 1 / -1"] {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 992px) {
+    .pricing-card[style*="grid-column: 1 / -1"] {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+}
+
     </style>
 </head>
 <body>
@@ -1342,60 +1381,96 @@
     </section>
 
     <!-- Valores -->
-    <section id="valores" class="pricing-section">
-        <div class="container">
-            <div class="section-title">
-                <h2>Valores de Inscrição</h2>
-                <p>Confira os valores para participar da 1ª TechWeek</p>
-            </div>
-            
-            <div class="pricing-container">
-                <div class="pricing-card">
-                    <div class="pricing-header">
-                        <h3>Evento Principal</h3>
-                        <div class="pricing-badge">1° Lote</div>
-                    </div>
-                    
-                    <div class="pricing-price">
-                        <span>A partir de</span>
-                        R$15
-                    </div>
-                    
-                    <ul class="pricing-features">
-                        <li><i class="fas fa-check-circle"></i>Universitário de TI: R$25</li>
-                        <li><i class="fas fa-check-circle"></i>Ensino médio: R$15</li>
-                        <li><i class="fas fa-check-circle"></i>Público geral: R$50</li>
-                        <li><i class="fas fa-check-circle"></i>Acesso a todas as palestras</li>
-                        <li><i class="fas fa-check-circle"></i>Certificado de participação</li>
-                    </ul>
+   
+
+<!-- Valores -->
+<section id="valores" class="pricing-section">
+    <div class="container">
+        <div class="section-title">
+            <h2>Valores de Inscrição</h2>
+            <p>Confira os valores para participar da 1ª TechWeek</p>
+        </div>
+        
+        <div class="pricing-container">
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <h3>Universitário de TI</h3>
+                    <div class="pricing-badge">Sistema de Lotes</div>
                 </div>
                 
-                <div class="pricing-card">
-                    <div class="pricing-header">
-                        <h3>Hackaton</h3>
-                        <div class="pricing-badge">Competição</div>
+                <div class="pricing-price">
+                    <span>Lote 1</span>
+                    R$25
+                    <div style="font-size: 1.2rem; margin-top: 10px; color: var(--light-gray);">
+                        <span>Lote 2: preço a definir</span>
                     </div>
-                    
-                    <div class="pricing-price">
-                        <span>A partir de</span>
-                        R$15
-                    </div>
-                    
-                    <ul class="pricing-features">
-                        <li><i class="fas fa-check-circle"></i>Para inscritos no evento: R$15 por pessoa</li>
-                        <li><i class="fas fa-check-circle"></i>Para não inscritos: R$50 por pessoa</li>
-                        <li><i class="fas fa-check-circle"></i>Premiação para os melhores projetos</li>
-                        <li><i class="fas fa-check-circle"></i>Mentoria durante o evento</li>
-                        <li><i class="fas fa-check-circle"></i>Certificado de participação</li>
+                </div>
+                
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check-circle"></i>Primeiras 50 inscrições pagas: R$25</li>
+                    <li><i class="fas fa-check-circle"></i>Após esgotamento: preço a definir</li>
+                    <li><i class="fas fa-check-circle"></i>Vagas limitadas por lote</li>
+                    <li><i class="fas fa-check-circle"></i>Garantia de inscrição nas oficinas</li>
+                    <li><i class="fas fa-check-circle"></i>Desconto na inscrição do hackaton</li>                    
+                    <li><i class="fas fa-check-circle"></i>Certificado de participação</li>
+                </ul>
+                
+                <div class="pricing-note">
+                    * O lote é garantido apenas após o pagamento do comprovante
+                </div>
+            </div>
+            
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <h3>Demais Categorias</h3>
+                    <div class="pricing-badge">Valor Fixo</div>
+                </div>
+                
+                <div class="pricing-price">
+                    Valores Únicos
+                </div>
+                
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check-circle"></i>Estudante de Ensino médio ou técnico: R$15</li>
+                    <li><i class="fas fa-check-circle"></i>Público geral: R$50</li>
+                    <li><i class="fas fa-check-circle"></i>Sem sistema de lotes</li>
+                    <li><i class="fas fa-check-circle"></i>Garantia de inscrição nas oficinas</li>
+                    <li><i class="fas fa-check-circle"></i>Desconto na inscrição do hackaton</li>     
+                    <li><i class="fas fa-check-circle"></i>Certificado de participação</li>
+                </ul>
+                
+                <div class="pricing-note">
+                    * Valores mantidos durante todo o período de inscrições
+                </div>
+            </div>
+            
+            <div class="pricing-card" style="grid-column: 1 / -1;">
+                <div class="pricing-header">
+                    <h3>Sistema de Lotes</h3>
+                    <div class="pricing-badge">Como Funciona</div>
+                </div>
+                
+                <div style="text-align: left; color: var(--light-gray);">
+                    <p><strong>Para universitários de TI:</strong></p>
+                    <ul style="list-style-type: disc; padding-left: 20px; margin-bottom: 15px;">
+                        <li>O <strong>Lote 1</strong> (R$ 25,00) é válido para as primeiras <strong>50 inscrições pagas</strong></li>
+                        <li>Após o esgotamento das 50 vagas do Lote 1, o valor passa para o <strong>Lote 2</strong> (preço a definir)</li>
+                        <li>O lote é garantido apenas com o <strong>pagamento confirmado</strong> do comprovante</li>
+                        <li>As demais categorias mantêm valores fixos sem sistema de lotes</li>
                     </ul>
                     
-                    <p class="pricing-note">* Valores sujeitos a alteração sem aviso prévio</p>
+                    <div style="background: rgba(0, 191, 99, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid var(--neon-green);">
+                        <p style="margin: 0; color: var(--neon-green); font-weight: 600;">
+                            <i class="fas fa-info-circle"></i> Fique atento: O lote é garantido apenas após a confirmação do pagamento!
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Inscrição -->
+        <!-- Inscrição -->
     <section id="inscricao">
         <div class="container">
             <div class="section-title">
@@ -1424,8 +1499,19 @@
                     <div class="form-group">
                         <label for="telefone">Telefone</label>
                         <input type="tel" id="telefone" name="telefone">
+                    </div>                                        
+
+                    <!-- Novo campo para seleção de categoria -->
+                    <div class="form-group">
+                        <label for="categoria" class="required">Categoria de Inscrição</label>
+                        <select id="categoria" name="categoria" required>
+                            <option value="">Selecione uma categoria</option>
+                            <option value="universitario_ti">Universitário de TI</option>
+                            <option value="ensino_medio">Estudante de Ensino Médio ou Técnico</option>
+                            <option value="publico_geral">Público Geral</option>
+                        </select>                        
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="instituicao">Instituição/Empresa</label>
                         <input type="text" id="instituicao" name="instituicao">
@@ -1701,15 +1787,17 @@
             }
             
             // Coletar dados do formulário
-            const formData = {
-                nome: document.getElementById('nome').value,
-                email: document.getElementById('email').value,
-                cpf: document.getElementById('cpf').value,
-                telefone: document.getElementById('telefone').value,
-                instituicao: document.getElementById('instituicao').value,
-                senha: senhaInput.value,
-                aceitoTermos: true
-            };
+           
+const formData = {
+    nome: document.getElementById('nome').value,
+    email: document.getElementById('email').value,
+    cpf: document.getElementById('cpf').value,
+    telefone: document.getElementById('telefone').value,
+    instituicao: document.getElementById('instituicao').value,
+    categoria: document.getElementById('categoria').value, // Campo adicionado
+    senha: senhaInput.value,
+    aceitoTermos: true
+};
             
             // Validação básica
             if(!formData.nome || !formData.email || !formData.cpf || !formData.senha) {
@@ -1944,28 +2032,34 @@
             }
         });
         
-        // Suavizar rolagem
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                const targetId = this.getAttribute('href');
-                if(targetId === '#') return;
-                
-                const targetElement = document.querySelector(targetId);
-                if(targetElement) {
-                    window.scrollTo({
-                        top: targetElement.offsetTop - 70,
-                        behavior: 'smooth'
-                    });
-                    
-                    // Fechar menu mobile após clicar em um link
-                    if(menu.classList.contains('active')) {
-                        menu.classList.remove('active');
-                    }
-                }
+        // Suavizar rolagem com offset para o header fixo
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const targetId = this.getAttribute('href');
+        if(targetId === '#') return;
+        
+        const targetElement = document.querySelector(targetId);
+        if(targetElement) {
+            // Calcular a posição considerando a altura do header (80px)
+            const offsetTop = targetElement.offsetTop - 80;
+            
+            window.scrollTo({
+                top: offsetTop,
+                behavior: 'smooth'
             });
-        });
+            
+            // Atualizar a URL sem recarregar a página
+            history.pushState(null, null, targetId);
+            
+            // Fechar menu mobile após clicar em um link
+            if(menu.classList.contains('active')) {
+                menu.classList.remove('active');
+            }
+        }
+    });
+});
     
     // Função para carregar a programação via AJAX
     function carregarProgramacao() {
@@ -2040,6 +2134,26 @@
     
     // Carregar a programação quando a página estiver pronta
     document.addEventListener('DOMContentLoaded', carregarProgramacao);
+    
+    // Lógica para exibição do preço conforme a categoria selecionada
+        const categoriaSelect = document.getElementById('categoria');
+        const precoExibicao = document.getElementById('preco-exibicao');
+        
+        // Mapeamento de preços por categoria
+        const precos = {
+            'universitario_ti': 'R$ 25,00',
+            'ensino_medio': 'R$ 15,00',
+            'publico_geral': 'R$ 50,00'
+        };
+        
+        categoriaSelect.addEventListener('change', function() {
+            const categoria = this.value;
+            if (categoria && precos[categoria]) {
+                precoExibicao.textContent = precos[categoria];
+            } else {
+                precoExibicao.textContent = 'R$ 0,00';
+            }
+        });
     </script>
 </body>
 </html>

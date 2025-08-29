@@ -82,7 +82,7 @@ function processarLogin($data, $pdo) {
         }
         
         // Buscar usuário
-        $stmt = $pdo->prepare("SELECT id, nome, cpf, email, senha, instituicao, data_cadastro FROM participantes WHERE $campo = :login");
+        $stmt = $pdo->prepare("SELECT id, tipo_inscricao, lote_inscricao, nome, cpf, email, telefone, senha, instituicao, data_cadastro FROM participantes WHERE $campo = :login");
         $stmt->bindParam(':login', $login, PDO::PARAM_STR);
         $stmt->execute();
         
@@ -94,8 +94,11 @@ function processarLogin($data, $pdo) {
                 // Login bem-sucedido
                 $_SESSION['usuario'] = $usuario;
                 $_SESSION['usuario_id'] = $usuario['id'];
+                $_SESSION['usuario_tipo_inscricao'] = $usuario['tipo_inscricao'];
+                $_SESSION['usuario_lote_inscricao'] = $usuario['lote_inscricao'];
                 $_SESSION['usuario_nome'] = $usuario['nome'];
                 $_SESSION['usuario_email'] = $usuario['email'];
+                $_SESSION['usuario_telefone'] = $usuario['telefone'];
                 $_SESSION['usuario_administrador'] = 1;
                 $_SESSION['logado'] = true;
                 

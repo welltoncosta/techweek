@@ -256,26 +256,192 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($response);
     }
     
-    // Ação: Validar pagamento
-    if (isset($_POST['action']) && $_POST['action'] === 'validar_pagamento') {
-        $id = $_POST['id'];        
-        $aprovado = $_POST['aprovado'];
+    // Ação: Validar pagamento (com adição de transação)
+if (isset($_POST['action']) && $_POST['action'] === 'validar_pagamento') {
+    $id = $_POST['id'];
+    $aprovado = $_POST['aprovado'] == '1';
+    
+    try {
+        $status = $aprovado ? 'aprovado' : 'rejeitado';
+        $stmt = $pdo->prepare("UPDATE comprovantes SET status = :status, data_avaliacao = NOW() WHERE id = :id");
+        $stmt->execute([
+            ':status' => $status,
+            ':id' => $id
+        ]);
+        
+         // Se foi aprovado, verificar e ajustar o lote para universitários de TI
+    if ($aprovado) {
+        // Buscar informações do participante
+        $stmt = $pdo->prepare("SELECT p.* FROM comprovantes c JOIN participantes p ON c.participante_id = p.id WHERE c.id = :id");
+        $stmt->execute([':id' => $id]);
+        $participante = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($participante && $participante['tipo_inscricao'] === 'universitario_ti') {
+            // Contar quantos participantes já têm comprovante aprovado no lote 1
+            $stmt = $pdo->prepare("SELECT COUNT(DISTINCT p.id) as count 
+                                  FROM participantes p 
+                                  INNER JOIN comprovantes c ON p.id = c.participante_id 
+                                  WHERE p.tipo_inscricao = 'universitario_ti' 
+                                  AND p.lote_inscricao = '1' 
+                                  AND c.status = 'aprovado'");
+            $stmt->execute();
+            $countLote1 = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+            $lote = ($countLote1 <= 50) ? '1' : '2';
+
+            // Buscar o preço do lote correspondente
+            $stmt = $pdo->prepare("SELECT valor FROM precos_inscricao WHERE categoria = 'universitario_ti' AND lote = :lote AND ativo = 1");
+            $stmt->execute([':lote' => $lote]);
+            $preco = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            $valor_inscricao = $preco ? $preco['valor'] : 0;
+
+            // Atualizar o lote e o valor pago pelo participante
+            $stmt = $pdo->prepare("UPDATE participantes SET lote_inscricao = :lote, valor_pago = :valor_pago WHERE id = :id");
+            $stmt->execute([
+                ':lote' => $lote,
+                ':valor_pago' => $valor_inscricao,
+                ':id' => $participante['id']
+            ]);
+
+            // Atualizar o valor da transação, se existir
+            $stmt = $pdo->prepare("UPDATE transacoes SET valor = :valor WHERE comprovante_id = :comprovante_id");
+            $stmt->execute([
+                ':valor' => $valor_inscricao,
+                ':comprovante_id' => $id
+            ]);
+        }
+    }
+    
+        
+        $response['success'] = true;
+        $response['message'] = 'Pagamento validado com sucesso';
+    } catch (PDOException $e) {
+        $response['message'] = 'Erro ao validar pagamento: ' . $e->getMessage();
+    }
+    
+    echo json_encode($response);
+}
+    
+    // Ação: Adicionar transação manualmente
+    if (isset($_POST['action']) && $_POST['action'] === 'adicionar_transacao') {
+        $categoria_id = $_POST['categoria_id'];
+        $descricao = $_POST['descricao'];
+        $valor = $_POST['valor'];
+        $data = $_POST['data'];
+        $tipo = $_POST['tipo'];
         
         try {
-            $status = $aprovado ? 'aprovado' : 'rejeitado';
-            $stmt = $pdo->prepare("UPDATE comprovantes SET status = :status, data_avaliacao = NOW() WHERE id = :id");
+            $stmt = $pdo->prepare("INSERT INTO transacoes (categoria_id, descricao, valor, data, tipo) 
+                                  VALUES (:categoria_id, :descricao, :valor, :data, :tipo)");
             $stmt->execute([
-                ':status' => $status,
-                ':id' => $id
+                ':categoria_id' => $categoria_id,
+                ':descricao' => $descricao,
+                ':valor' => $valor,
+                ':data' => $data,
+                ':tipo' => $tipo
             ]);
             
             $response['success'] = true;
-            $response['message'] = 'Pagamento validado com sucesso';
+            $response['message'] = 'Transação adicionada com sucesso';
         } catch (PDOException $e) {
-            $response['message'] = 'Erro ao validar pagamento: ' . $e->getMessage();
+            $response['message'] = 'Erro ao adicionar transação: ' . $e->getMessage();
         }
         echo json_encode($response);
     }
+    
+    // Ação: Excluir transação
+    if (isset($_POST['action']) && $_POST['action'] === 'excluir_transacao') {
+        $id = $_POST['id'];
+        
+        try {
+            $stmt = $pdo->prepare("DELETE FROM transacoes WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Transação excluída com sucesso';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao excluir transação: ' . $e->getMessage();
+        }
+        
+        echo json_encode($response);
+    }
+    
+    // Ação: Buscar preço
+if (isset($_POST['action']) && $_POST['action'] === 'buscar_preco') {
+    $id = $_POST['id'];
+    
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM precos_inscricao WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        $preco = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($preco) {
+            $response['success'] = true;
+            $response['preco'] = $preco;
+        } else {
+            $response['message'] = 'Preço não encontrado';
+        }
+    } catch (PDOException $e) {
+        $response['message'] = 'Erro ao buscar preço: ' . $e->getMessage();
+    }
+    echo json_encode($response);
+}
+
+// Ação: Adicionar preço
+if (isset($_POST['action']) && $_POST['action'] === 'adicionar_preco') {
+    $categoria = $_POST['categoria'];
+    $descricao = $_POST['descricao'];
+    $valor = $_POST['valor'];
+    $lote = $_POST['lote'];
+    $ativo = $_POST['ativo'];
+    
+    try {
+        $stmt = $pdo->prepare("INSERT INTO precos_inscricao (categoria, descricao, valor, lote, ativo) VALUES (:categoria, :descricao, :valor, :lote, :ativo)");
+        $stmt->execute([
+            ':categoria' => $categoria,
+            ':descricao' => $descricao,
+            ':valor' => $valor,
+            ':lote' => $lote,
+            ':ativo' => $ativo
+        ]);
+        
+        $response['success'] = true;
+        $response['message'] = 'Preço adicionado com sucesso';
+    } catch (PDOException $e) {
+        $response['message'] = 'Erro ao adicionar preço: ' . $e->getMessage();
+    }
+    echo json_encode($response);
+}
+
+// Ação: Editar preço
+if (isset($_POST['action']) && $_POST['action'] === 'editar_preco') {
+    $id = $_POST['id'];
+    $categoria = $_POST['categoria'];
+    $descricao = $_POST['descricao'];
+    $valor = $_POST['valor'];
+    $lote = $_POST['lote'];
+    $ativo = $_POST['ativo'];
+    
+    try {
+        $stmt = $pdo->prepare("UPDATE precos_inscricao SET categoria = :categoria, descricao = :descricao, valor = :valor, lote = :lote, ativo = :ativo WHERE id = :id");
+        $stmt->execute([
+            ':categoria' => $categoria,
+            ':descricao' => $descricao,
+            ':valor' => $valor,
+            ':lote' => $lote,
+            ':ativo' => $ativo,
+            ':id' => $id
+        ]);
+        
+        $response['success'] = true;
+        $response['message'] = 'Preço atualizado com sucesso';
+    } catch (PDOException $e) {
+        $response['message'] = 'Erro ao editar preço: ' . $e->getMessage();
+    }
+    echo json_encode($response);
+}
+
     
 // Ação: Cadastrar participante
 if (isset($_POST['action']) && $_POST['action'] === 'cadastrar_participante') {
@@ -346,9 +512,27 @@ if (isset($_POST['action']) && $_POST['action'] === 'toggle_ativa') {
     }
 }
 
+// Ação: Excluir preço
+if (isset($_POST['action']) && $_POST['action'] === 'excluir_preco') {
+    $id = $_POST['id'];
+    
+    try {
+        $stmt = $pdo->prepare("DELETE FROM precos_inscricao WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        
+        $response['success'] = true;
+        $response['message'] = 'Preço excluído com sucesso';
+    } catch (PDOException $e) {
+        $response['message'] = 'Erro ao excluir preço: ' . $e->getMessage();
+    }
+     echo json_encode($response);
+}
+
 
 
 // Gerar token CSRF
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
+
+

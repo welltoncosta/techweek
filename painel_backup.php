@@ -11,64 +11,6 @@ include("conexao.php");
 // Recuperar dados do usuário
 $usuario = $_SESSION['usuario'];
 
-// Buscar informações sobre preços e lotes (apenas aprovados)
-$stmt = $pdo->prepare("
-    SELECT 
-        p.tipo_inscricao,
-        p.lote_inscricao,
-        p.preco_inscricao,
-        (SELECT COUNT(DISTINCT p2.id) 
-         FROM participantes p2 
-         INNER JOIN comprovantes c ON p2.id = c.participante_id 
-         WHERE p2.tipo_inscricao = 'universitario_ti' 
-         AND p2.lote_inscricao = '1' 
-         AND c.status = 'aprovado') as inscricoes_lote1,
-        (SELECT COUNT(DISTINCT p2.id) 
-         FROM participantes p2 
-         INNER JOIN comprovantes c ON p2.id = c.participante_id 
-         WHERE p2.tipo_inscricao = 'universitario_ti' 
-         AND p2.lote_inscricao = '2' 
-         AND c.status = 'aprovado') as inscricoes_lote2
-    FROM participantes p 
-    WHERE p.id = :id
-");
-
-$stmt->execute([':id' => $usuario['id']]);
-$info_inscricao = $stmt->fetch(PDO::FETCH_ASSOC);
-
-// Determinar a categoria e texto explicativo
-$categoria = $info_inscricao['tipo_inscricao'] ?? '';
-$lote = $info_inscricao['lote_inscricao'] ?? '';
-$preco = $info_inscricao['preco_inscricao'] ?? 0;
-$inscricoes_lote1 = $info_inscricao['inscricoes_lote1'] ?? 0;
-$inscricoes_lote2 = $info_inscricao['inscricoes_lote2'] ?? 0;
-
-// Textos explicativos baseados na categoria
-$textos_categoria = [
-    'universitario_ti' => [
-        'titulo' => 'Universitário de TI',
-        'descricao' => 'Desconto especial para estudantes de cursos de Tecnologia da Informação'
-    ],
-    'ensino_medio' => [
-        'titulo' => 'Estudante de Ensino Médio ou Técnico',
-        'descricao' => 'Valor promocional para estudantes do ensino médio e técnico'
-    ],
-    'publico_geral' => [
-        'titulo' => 'Público Geral',
-        'descricao' => 'Inscrição para o público em geral'
-    ]
-];
-
-// Texto personalizado para universitários de TI sobre lotes
-if ($categoria === 'universitario_ti') {
-    $vagas_restantes = max(0, 50 - $inscricoes_lote1);
-    $texto_lote = "Lote $lote - " . ($lote === '1' ? 
-        "$vagas_restantes vagas com desconto restantes!" : 
-        "Valor normal após esgotamento das vagas promocionais");
-} else {
-    $texto_lote = "Valor único - Sem sistema de lotes";
-}
-
 // Buscar atividades disponíveis
 $stmt = $pdo->prepare("SELECT * FROM atividades WHERE ativa = '1' ORDER BY data, horario");
 $stmt->execute();
@@ -93,13 +35,11 @@ $stmt = $pdo->prepare("SELECT * FROM comprovantes WHERE participante_id = :parti
 $stmt->execute([':participante_id' => $usuario['id']]);
 $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <link rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2300FF00' d='M13 2.03v2.02c4.39.54 7.5 4.53 6.96 8.92c-.46 3.64-3.32 6.53-6.96 6.96v2c5.5-.55 9.5-5.43 8.95-10.93c-.45-4.75-4.22-8.5-8.95-8.97m-2 .03c-1.95.19-3.81.94-5.33 2.2L7.1 5.74c1.12-.9 2.47-1.48 3.9-1.68v-2M4.26 5.67A9.885 9.885 0 0 0 2.05 11h2c.19-1.42.75-2.77 1.64-3.9L4.26 5.67M2.06 13c.2 1.96.97 3.81 2.21 5.33l1.42-1.43A8.002 8.002 0 0 1 4.06 13h-2m5.04 5.37l-1.43 1.37A9.994 9.994 0 0 0 11 22v-2a8.002 8.002 0 0 1-3.9-1.63m9.33-12.37l-1.59 1.59L16 10l-4-4V3l-1 1l4 4l.47-.53l-1.53-1.53l1.59-1.59l.94.94z'/%3E%3C/svg%3E" type="image/svg+xml">
     <title>Painel do Participante - 1ª TechWeek</title>
     <link href='https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1122,77 +1062,6 @@ $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
-          /* Novos estilos para a seção de preços */
-        .price-display {
-            background: rgba(0, 191, 99, 0.1);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 10px;
-            text-align: center;
-            font-weight: 600;
-            color: var(--neon-green);            
-        }
-        
-        .light-theme .price-display {
-            background: rgba(45, 125, 90, 0.1);
-            color: var(--accent-color);
-        }
-         .price-value {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-top: 5px;
-        }
-        
-        .category-description {
-            font-size: 0.9rem;
-            color: var(--light-gray);
-            margin-top: 5px;
-        }
-
-        .required-field::after {
-            content: " *";
-            color: var(--error-color);
-        }
-
-        /* Estilos para a seção de valor de inscrição */
-.valor-info-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    padding: 25px;
-    margin-bottom: 30px;
-    box-shadow: 0 0 15px rgba(0, 191, 99, 0.1);
-}
-
-.light-theme .valor-info-card {
-    box-shadow: 0 0 15px rgba(45, 125, 90, 0.1);
-}
-
-.valor-destaque {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--neon-green);
-    text-align: center;
-    margin: 15px 0;
-}
-
-.light-theme .valor-destaque {
-    color: var(--accent-color);
-}
-
-.info-destaque {
-    background: rgba(0, 191, 99, 0.1);
-    border-radius: 8px;
-    padding: 15px;
-    margin-top: 15px;
-    border-left: 4px solid var(--neon-green);
-}
-
-.light-theme .info-destaque {
-    background: rgba(45, 125, 90, 0.1);
-    border-left-color: var(--accent-color);
-}
     </style>
 </head>
 <body>
@@ -1211,8 +1080,8 @@ $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 <ul class="menu">
                     <li><a href="#dashboard">Dashboard</a></li>
-                    <li><a href="#dados">Meus Dados</a></li>                    
-                    <li><a href="#comprovantes-pix">Comprovantes</a></li> <!-- Alterado aqui -->
+                    <li><a href="#dados">Meus Dados</a></li>
+                    <li><a href="#comprovantes">Comprovantes</a></li>
                     <li><a href="#atividades">Atividades</a></li>
                     <li><a href="#certificado">Certificado</a></li>                    
                 </ul>
@@ -1260,12 +1129,12 @@ $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="#dados" class="btn">Acessar</a>
                 </div>
                 
-               <div class="dashboard-card">
-    <i class="fas fa-receipt"></i>
-    <h3>Comprovantes</h3>
-    <p>Envie e acompanhe seus comprovantes PIX</p>
-    <a href="#comprovantes-pix" class="btn">Ver Comprovantes</a> <!-- Alterado aqui -->
-</div>
+                <div class="dashboard-card">
+                    <i class="fas fa-receipt"></i>
+                    <h3>Comprovantes</h3>
+                    <p>Envie e acompanhe seus comprovantes PIX</p>
+                    <a href="#comprovantes" class="btn">Ver Comprovantes</a>
+                </div>
                 
                 <div class="dashboard-card">
                     <i class="fas fa-calendar-alt"></i>
@@ -1283,7 +1152,7 @@ $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </section>
             
             <!-- User Info Section -->
-            <section class="user-info" id="dados">
+            <section class="user-info" " id="dados">
                 <div  style="display: flex; justify-content: space-between; align-items: center;">
                     <h2>Meus Dados Pessoais</h2>
                     <button class="btn-edit" id="btnEditDados">
@@ -1291,179 +1160,102 @@ $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </button>
                 </div>
                 
-                <!-- Na seção de dados do usuário, adicione IDs aos elementos -->                
-<div class="info-grid">
-    <div class="info-item">
-        <span class="info-label">Nome Completo</span>
-        <span class="info-value" id="info-nome"><?php echo htmlspecialchars($usuario['nome']); ?></span>
-    </div>
-    
-    <div class="info-item">
-        <span class="info-label">E-mail</span>
-        <span class="info-value" id="info-email"><?php echo htmlspecialchars($usuario['email']); ?></span>
-    </div>
-    
-    <div class="info-item">
-        <span class="info-label">CPF</span>
-        <span class="info-value" id="info-cpf"><?php echo !empty($usuario['cpf']) ? htmlspecialchars($usuario['cpf']) : 'Não informado'; ?></span>
-    </div>
-    
-    <div class="info-item">
-        <span class="info-label">Telefone</span>
-        <span class="info-value" id="info-telefone"><?php echo !empty($usuario['telefone']) ? htmlspecialchars($usuario['telefone']) : 'Não informado'; ?></span>
-    </div>
-    
-    <div class="info-item">
-        <span class="info-label">Instituição</span>
-        <span class="info-value" id="info-instituicao"><?php echo !empty($usuario['instituicao']) ? htmlspecialchars($usuario['instituicao']) : 'Não informado'; ?></span>
-    </div>
-    
-    <div class="info-item">
-        <span class="info-label">Data de Inscrição</span>
-        <span class="info-value" id="info-data-cadastro"><?php echo date('d/m/Y', strtotime($usuario['data_cadastro'])); ?></span>
-    </div>
-</div>
-          
-                
-                    <!-- Formulário de Edição -->
-                     <div class="edit-form" id="editForm">
-            <h3 style="color: var(--neon-green); margin-bottom: 20px;">Editar Dados Pessoais</h3>
-            
-            <form id="formEditarDados">
-                <div class="form-group">
-                    <label for="edit_nome" class="required-field">Nome Completo</label>
-                    <input type="text" id="edit_nome" name="nome" value="<?php echo htmlspecialchars($usuario['nome']); ?>" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="edit_email" class="required-field">E-mail</label>
-                    <input type="email" id="edit_email" name="email" value="<?php echo htmlspecialchars($usuario['email']); ?>" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="cpf" class="required-field">CPF</label>
-                    <input type="text" id="cpf" name="cpf" required maxlength="14" value="<?php echo !empty($usuario['cpf']) ? htmlspecialchars($usuario['cpf']) : ''; ?>" disabled> * não pode ser editado
-                </div>
-            
-                <div class="form-group">
-                    <label for="edit_telefone">Telefone</label>
-                    <input type="text" id="edit_telefone" name="telefone" value="<?php echo !empty($usuario['telefone']) ? htmlspecialchars($usuario['telefone']) : ''; ?>">
-                </div>
-                
-                <div class="form-group">
-                    <label for="edit_instituicao" class="required-field">Instituição</label>
-                    <input type="text" id="edit_instituicao" name="instituicao" value="<?php echo htmlspecialchars($usuario['instituicao']); ?>" required>
-                </div>
-                
-                <button type="button" class="toggle-password" id="togglePassword">
-                    <i class="fas fa-key"></i> Alterar senha
-                </button>
-                
-                <div class="password-fields" id="passwordFields">
-                    <div class="form-group">
-                        <label for="edit_senha_atual" class="required-field">Senha Atual</label>
-                        <input type="password" id="edit_senha_atual" name="senha_atual">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Nome Completo</span>
+                        <span class="info-value"><?php echo htmlspecialchars($usuario['nome']); ?></span>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="edit_nova_senha" class="required-field">Nova Senha</label>
-                        <input type="password" id="edit_nova_senha" name="nova_senha">
+                    <div class="info-item">
+                        <span class="info-label">E-mail</span>
+                        <span class="info-value"><?php echo htmlspecialchars($usuario['email']); ?></span>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="edit_confirmar_senha" class="required-field">Confirmar Nova Senha</label>
-                        <input type="password" id="edit_confirmar_senha" name="confirmar_senha">
+                    <div class="info-item">
+                        <span class="info-label">CPF</span>
+                        <span class="info-value"><?php echo !empty($usuario['cpf']) ? htmlspecialchars($usuario['cpf']) : 'Não informado'; ?></span>
+                        
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Telefone</span>
+                        <span class="info-value"><?php echo !empty($usuario['telefone']) ? htmlspecialchars($usuario['telefone']) : 'Não informado'; ?></span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Instituição</span>
+                        <span class="info-value"><?php echo !empty($usuario['instituicao']) ? htmlspecialchars($usuario['instituicao']) : 'Não informado'; ?></span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Data de Inscrição</span>
+                        <span class="info-value"><?php echo date('d/m/Y', strtotime($usuario['data_cadastro'])); ?></span>
                     </div>
                 </div>
                 
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="submit" class="btn-primary">Salvar Alterações</button>
-                    <button type="button" class="btn-primary" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" id="btnCancelEdit">Cancelar</button>
+                <!-- Formulário de Edição -->
+                <div class="edit-form" id="editForm">
+                    <h3 style="color: var(--neon-green); margin-bottom: 20px;">Editar Dados Pessoais</h3>
+                    
+                    <form id="formEditarDados">
+                        <div class="form-group">
+                            <label for="edit_nome">Nome Completo</label>
+                            <input type="text" id="edit_nome" name="nome" value="<?php echo htmlspecialchars($usuario['nome']); ?>" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit_email">E-mail</label>
+                            <input type="email" id="edit_email" name="email" value="<?php echo htmlspecialchars($usuario['email']); ?>" required>
+                        </div>
+                        
+                        <div class="form-group">
+                        	<label for="cpf" class="required">CPF</label>
+                        	<input type="text" id="cpf" name="cpf" required maxlength="14" value="<?php echo !empty($usuario['cpf']) ? htmlspecialchars($usuario['cpf']) : ''; ?>" disabled> * não pode ser editado
+                    	</div>
+                    
+                        <div class="form-group">
+                            <label for="edit_telefone">Telefone</label>
+                            <input type="text" id="edit_telefone" name="telefone" value="<?php echo !empty($usuario['telefone']) ? htmlspecialchars($usuario['telefone']) : ''; ?>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit_instituicao">Instituição</label>
+                            <input type="text" id="edit_instituicao" name="instituicao" value="<?php echo htmlspecialchars($usuario['instituicao']); ?>" required>
+                        </div>
+                        
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <i class="fas fa-key"></i> Alterar senha
+                        </button>
+                        
+                        <div class="password-fields" id="passwordFields">
+                            <div class="form-group">
+                                <label for="edit_senha_atual">Senha Atual</label>
+                                <input type="password" id="edit_senha_atual" name="senha_atual">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="edit_nova_senha">Nova Senha</label>
+                                <input type="password" id="edit_nova_senha" name="nova_senha">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="edit_confirmar_senha">Confirmar Nova Senha</label>
+                                <input type="password" id="edit_confirmar_senha" name="confirmar_senha">
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn-primary">Salvar Alterações</button>
+                            <button type="button" class="btn-primary" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" id="btnCancelEdit">Cancelar</button>
+                        </div>
+                    </form>
+                    <div id="messageEditarDados" style="margin-top: 15px;"></div>
                 </div>
-            </form>
-            <div id="messageEditarDados" style="margin-top: 15px;"></div>
-        </div>
             </section>
             
-
-<!-- Valor da Inscrição Section -->
-<section id="valor-inscricao" style="margin-top: 20px;">
-    <h2 style="color: var(--neon-green); margin-bottom: 20px; font-size: 1.8rem;">VALOR DA INSCRIÇÃO</h2>
-    
-    <div class="user-info">
-        <div class="info-grid">
-            <div class="info-item">
-                <span class="info-label">Categoria de Inscrição</span>
-                <span class="info-value">
-                    <?php 
-                    if (!empty($categoria) && isset($textos_categoria[$categoria])) {
-                        echo htmlspecialchars($textos_categoria[$categoria]['titulo']);
-                    } else {
-                        echo 'Não especificada';
-                    }
-                    ?>
-                </span>
-            </div>
-            
-            <div class="info-item">
-                <span class="info-label">Lote</span>
-                <span class="info-value"><?php echo !empty($lote) ? "Lote $lote" : 'Não definido'; ?></span>
-            </div>
-            
-            <div class="info-item">
-                <span class="info-label">Valor da Inscrição</span>
-                <span class="info-value" style="font-size: 1.4rem; font-weight: 700; color: var(--neon-green);">
-                    R$ <?php echo number_format($preco, 2, ',', '.'); ?>
-                </span>
-            </div>
-            
-            <div class="info-item" style="grid-column: 1 / -1;">
-                <span class="info-label">Informações</span>
-                <span class="info-value">
-                    <?php
-                    if (!empty($categoria) && isset($textos_categoria[$categoria])) {
-                        echo htmlspecialchars($textos_categoria[$categoria]['descricao']);
-                    }
-                    
-                    if ($categoria === 'universitario_ti') {
-                        echo "<br><br>";
-                        echo "<strong>Sistema de Lotes para Universitários de TI:</strong><br>";
-                        echo "- Lote 1: R$ 25,00 (50 primeiras inscrições pagas)<br>";
-                        echo "- Lote 2: preço a definir (após esgotamento do lote 1)<br><br>";
-                        
-                        if ($lote === '1') {
-                            $vagas_restantes = max(0, 50 - $inscricoes_lote1);
-                            echo "Vagas restantes no Lote 1: <strong>$vagas_restantes</strong>";
-                        } else {
-                            echo "As 50 vagas do Lote 1 foram preenchidas. Valor atual: Lote 2";
-                        }
-                    }
-                    ?>
-                </span>
-            </div>
-        </div>
-        
-        <div style="margin-top: 20px; padding: 15px; background: rgba(0, 191, 99, 0.1); border-radius: 8px; border-left: 4px solid var(--neon-green);">
-            <h4 style="color: var(--neon-green); margin-bottom: 10px;">💡 Como funciona o sistema de valores?</h4>
-            <p style="margin: 0; color: var(--light-gray); font-size: 0.95rem;">
-                <?php
-                if ($categoria === 'universitario_ti') {
-                    echo "Para universitários de TI, oferecemos um sistema de lotes com desconto progressivo. 
-                    Os primeiros 50 inscritos que efetuarem o pagamento garantem o valor promocional do Lote 1. 
-                    Após isso, o valor passa para o Lote 2. Sua categoria garante o valor no momento do pagamento do comprovante.";
-                } else {
-                    echo "Sua categoria tem valor fixo, sem sistema de lotes. O valor da sua inscrição já está definido e 
-                    não sofrerá alterações independentemente do momento do pagamento.";
-                }
-                ?>
-            </p>
-        </div>
-    </div>
-</section>
-
             <!-- Comprovantes Section -->
-<section id="comprovantes-pix" style="margin-top: 40px;">
-    <h2 style="color: var(--neon-green); margin-bottom: 40px; font-size: 1.8rem;">Comprovantes PIX</h2>
+            <section id="comprovantes" style="margin-top: 20px;">
+                <h2 style="color: var(--neon-green); margin-bottom: 40px; font-size: 1.8rem;">Comprovantes PIX</h2>
                 
                 <div class="user-info">
                     <h3>Enviar Comprovante</h3>
@@ -2021,116 +1813,69 @@ $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
             button.addEventListener('click', cancelarInscricaoHandler);
         });
         
-        // Variável para controlar se os campos de senha estão visíveis
-    // Variável para controlar se os campos de senha estão visíveis
-let passwordFieldsVisible = false;
-
-// Edição de dados do usuário - CÓDIGO CORRIGIDO
-const btnEditDados = document.getElementById('btnEditDados');
-const editForm = document.getElementById('editForm');
-const btnCancelEdit = document.getElementById('btnCancelEdit');
-const togglePassword = document.getElementById('togglePassword');
-const passwordFields = document.getElementById('passwordFields');
-const formEditarDados = document.getElementById('formEditarDados');
-const messageEditarDados = document.getElementById('messageEditarDados');
-
-// Elementos dos dados exibidos (com IDs específicos)
-const infoNome = document.getElementById('info-nome');
-const infoEmail = document.getElementById('info-email');
-const infoTelefone = document.getElementById('info-telefone');
-const infoInstituicao = document.getElementById('info-instituicao');
-
-btnEditDados.addEventListener('click', () => {
-    editForm.style.display = 'block';
-    btnEditDados.style.display = 'none';
-    // Garantir que os campos de senha estejam ocultos ao abrir o formulário
-    passwordFields.style.display = 'none';
-    passwordFieldsVisible = false;
-});
-
-btnCancelEdit.addEventListener('click', () => {
-    editForm.style.display = 'none';
-    btnEditDados.style.display = 'block';
-    passwordFields.style.display = 'none';
-    passwordFieldsVisible = false;
-    // Limpar campos de senha ao cancelar
-    document.getElementById('edit_senha_atual').value = '';
-    document.getElementById('edit_nova_senha').value = '';
-    document.getElementById('edit_confirmar_senha').value = '';
-});
-
-togglePassword.addEventListener('click', () => {
-    passwordFieldsVisible = !passwordFieldsVisible;
-    passwordFields.style.display = passwordFieldsVisible ? 'block' : 'none';
-});
-
-formEditarDados.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // Se os campos de senha estão visíveis, validar as senhas
-    if (passwordFieldsVisible) {
-        const senhaAtual = document.getElementById('edit_senha_atual').value;
-        const novaSenha = document.getElementById('edit_nova_senha').value;
-        const confirmarSenha = document.getElementById('edit_confirmar_senha').value;
+        // Edição de dados do usuário
+        const btnEditDados = document.getElementById('btnEditDados');
+        const editForm = document.getElementById('editForm');
+        const btnCancelEdit = document.getElementById('btnCancelEdit');
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordFields = document.getElementById('passwordFields');
+        const formEditarDados = document.getElementById('formEditarDados');
+        const messageEditarDados = document.getElementById('messageEditarDados');
         
-        if (!senhaAtual) {
-            messageEditarDados.innerHTML = '<div class="message erro">Por favor, informe sua senha atual para alterar a senha.</div>';
-            return;
-        }
+        btnEditDados.addEventListener('click', () => {
+            editForm.style.display = 'block';
+            btnEditDados.style.display = 'none';
+        });
         
-        if (novaSenha !== confirmarSenha) {
-            messageEditarDados.innerHTML = '<div class="message erro">A nova senha e a confirmação não coincidem.</div>';
-            return;
-        }
+        btnCancelEdit.addEventListener('click', () => {
+            editForm.style.display = 'none';
+            btnEditDados.style.display = 'block';
+            passwordFields.style.display = 'none';
+        });
         
-        if (novaSenha.length < 6) {
-            messageEditarDados.innerHTML = '<div class="message erro">A nova senha deve ter pelo menos 6 caracteres.</div>';
-            return;
-        }
-    }
-    
-    const formData = new FormData(this);
-    // Adicionar flag indicando se os campos de senha estão visíveis
-    formData.append('senha_visible', passwordFieldsVisible ? '1' : '0');
-    
-    fetch('editar_dados.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            messageEditarDados.innerHTML = `<div class="message sucesso">${data.message}</div>`;
-            
-            // Atualizar os dados exibidos usando os elementos com IDs específicos
-            if (infoNome) infoNome.textContent = document.getElementById('edit_nome').value;
-            if (infoEmail) infoEmail.textContent = document.getElementById('edit_email').value;
-            
-            const telefoneValue = document.getElementById('edit_telefone').value;
-            if (infoTelefone) infoTelefone.textContent = telefoneValue || 'Não informado';
-            
-            if (infoInstituicao) infoInstituicao.textContent = document.getElementById('edit_instituicao').value;
-            
-            // Esconder o formulário após 2 segundos
-            setTimeout(() => {
-                editForm.style.display = 'none';
-                btnEditDados.style.display = 'block';
+        togglePassword.addEventListener('click', () => {
+            if (passwordFields.style.display === 'none' || passwordFields.style.display === '') {
+                passwordFields.style.display = 'block';
+            } else {
                 passwordFields.style.display = 'none';
-                passwordFieldsVisible = false;
-                messageEditarDados.innerHTML = '';
-                // Limpar campos de senha
-                document.getElementById('edit_senha_atual').value = '';
-                document.getElementById('edit_nova_senha').value = '';
-                document.getElementById('edit_confirmar_senha').value = '';
-            }, 2000);
-        } else {
-            messageEditarDados.innerHTML = `<div class="message erro">${data.message}</div>`;
-        }
-    })
-    .catch(error => {
-        messageEditarDados.innerHTML = `<div class="message erro">Erro: ${error}</div>`;
-    });
-});
+            }
+        });
+        
+        formEditarDados.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('editar_dados.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    messageEditarDados.innerHTML = `<div class="message sucesso">${data.message}</div>`;
+                    
+                    // Atualizar os dados exibidos
+                    document.querySelector('.info-value:nth-child(1)').textContent = document.getElementById('edit_nome').value;
+                    document.querySelector('.info-value:nth-child(2)').textContent = document.getElementById('edit_email').value;
+                    document.querySelector('.info-value:nth-child(4)').textContent = document.getElementById('edit_telefone').value || 'Não informado';
+                    document.querySelector('.info-value:nth-child(5)').textContent = document.getElementById('edit_instituicao').value;
+                    
+                    // Esconder o formulário após 2 segundos
+                    setTimeout(() => {
+                        editForm.style.display = 'none';
+                        btnEditDados.style.display = 'block';
+                        passwordFields.style.display = 'none';
+                        messageEditarDados.innerHTML = '';
+                    }, 2000);
+                } else {
+                    messageEditarDados.innerHTML = `<div class="message erro">${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                messageEditarDados.innerHTML = `<div class="message erro">Erro: ${error}</div>`;
+            });
+        });
         
         // Formatação de CPF
         const cpfInput = document.getElementById('cpf');

@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
-    // Ação: Editar participante
+    /*// Ação: Editar participante
     if (isset($_POST['action']) && $_POST['action'] === 'editar_participante') {
         $id = $_POST['id'];
         $nome = $_POST['nome'];
@@ -297,7 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $response['message'] = 'Erro ao buscar atividade: ' . $e->getMessage();
         }
     }
-    
+    */
     // Se for uma requisição AJAX, retornar JSON
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
         header('Content-Type: application/json');
@@ -370,6 +370,32 @@ try {
     $stmt->execute();
     $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    
+    // Buscar categorias de transações
+    $stmt = $pdo->prepare("SELECT * FROM categorias_transacoes ORDER BY tipo, nome");
+    $stmt->execute();
+    $categorias_transacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Buscar transações
+    $stmt = $pdo->prepare("SELECT t.*, ct.nome as categoria_nome 
+                          FROM transacoes t 
+                          JOIN categorias_transacoes ct ON t.categoria_id = ct.id 
+                          ORDER BY t.data DESC, t.data_registro DESC");
+    $stmt->execute();
+    $transacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Calcular totais
+    $stmt = $pdo->prepare("SELECT 
+                          SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END) as total_entradas,
+                          SUM(CASE WHEN tipo = 'saida' THEN valor ELSE 0 END) as total_saidas,
+                          SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE -valor END) as saldo
+                          FROM transacoes");
+    $stmt->execute();
+    $totais = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    $total_entradas = $totais['total_entradas'] ?? 0;
+    $total_saidas = $totais['total_saidas'] ?? 0;
+    $saldo = $totais['saldo'] ?? 0;
 } catch (PDOException $e) {
     die("Erro ao buscar dados: " . $e->getMessage());
 }
@@ -1280,25 +1306,23 @@ function formatarDataHora($dataHora) {
         
         /* Flatpickr Custom Styles */
         .flatpickr-calendar {
-            background: var(--card-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 0 15px rgba(0, 191, 99, 0.2);
+            background: #fff;
+            color: #000;
+            border: 1px solid #cbd5e0;
+            box-shadow: 0 0 15px rgba(45, 125, 90, 0.1);
         }
         
-        .flatpickr-day {
-            color: var(--text-color);
-        }
-        
-        .flatpickr-day:hover {
-            background: var(--neon-green);
+        .light-theme .flatpickr-day {
             color: black;
         }
         
-        .flatpickr-day.today {
-            border-color: var(--neon-green);
+        .light-theme .flatpickr-day:hover {
+            background: black;
         }
         
+        .light-theme .flatpickr-day.today {
+            border-color: var(--accent-color);
+        }        
         .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange, .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus, .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay {
             background: var(--tech-green);
             border-color: var(--tech-green);
@@ -1306,15 +1330,15 @@ function formatarDataHora($dataHora) {
         }
         
         .flatpickr-time input, .flatpickr-time .flatpickr-am-pm {
-            color: var(--text-color);
+            color: black;
         }
         
         .flatpickr-time .numInputWrapper span.arrowUp:after {
-            border-bottom-color: var(--text-color);
+            border-bottom-color: black;
         }
         
         .flatpickr-time .numInputWrapper span.arrowDown:after {
-            border-top-color: var(--text-color);
+            border-top-color: black;
         }
         
         /* Ajustes para o tema claro */
@@ -1376,13 +1400,29 @@ function formatarDataHora($dataHora) {
             color: var(--accent-color);
         }
         
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
+        /* Transição suave para mudanças de aba */
+.tab-content {
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    transition: opacity 0.3s ease;
+}
+
+.tab-content.active {
+    opacity: 1;
+    height: auto;
+    overflow: visible;
+}
+
+/* Indicador visual para exclusão */
+tr[data-preco-id] {
+    transition: all 0.3s ease;
+}
+
+tr[data-preco-id].deleting {
+    opacity: 0.5;
+    background-color: rgba(255, 0, 0, 0.1);
+}
         
         /* Media Queries - Responsividade */
         @media (max-width: 1200px) {
@@ -1593,6 +1633,7 @@ function formatarDataHora($dataHora) {
                 <li><a href="#atividades" class="admin-nav" data-section="atividades">Atividades</a></li>
                 <li><a href="#presencas" class="admin-nav" data-section="presencas">Presenças</a></li>
                 <li><a href="#comprovantes" class="admin-nav" data-section="comprovantes">Comprovantes</a></li>
+                <li><a href="#contabilidade" class="admin-nav" data-section="contabilidade">Contabilidade</a></li>
             </ul>
         </div>
         
@@ -2148,7 +2189,219 @@ function formatarDataHora($dataHora) {
                     </div>
                 </div>
             </section>
+
+<!-- Na seção de admin-content, adicionar a seção de contabilidade -->
+<section id="contabilidade-section" class="admin-section">
+    <h2>Contabilidade do Evento</h2>
+    
+    <div class="dashboard-cards">
+        <div class="dashboard-card">
+            <i class="fas fa-money-bill-wave"></i>
+            <h3>Total de Entradas</h3>
+            <p>R$ <?php echo number_format($total_entradas, 2, ',', '.'); ?></p>
         </div>
+        
+        <div class="dashboard-card">
+            <i class="fas fa-money-bill-wave"></i>
+            <h3>Total de Saídas</h3>
+            <p>R$ <?php echo number_format($total_saidas, 2, ',', '.'); ?></p>
+        </div>
+        
+        <div class="dashboard-card">
+            <i class="fas fa-money-bill-wave"></i>
+            <h3>Saldo</h3>
+            <p>R$ <?php echo number_format($saldo, 2, ',', '.'); ?></p>
+        </div>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab-link active" data-tab="adicionar-transacao">Adicionar Transação</button>
+        <button class="tab-link" data-tab="lista-transacoes">Lista de Transações</button>
+	<button class="tab-link" data-tab="gerenciar-precos">Gerenciar Preços</button>
+    </div>
+    
+    <div id="adicionar-transacao" class="tab-content active">
+        <h3>Adicionar Nova Transação</h3>
+        <div class="table-container">
+            <form id="adicionar-transacao-form">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                <input type="hidden" name="action" value="adicionar_transacao">
+                
+                <div class="form-group">
+                    <label for="tipo-transacao">Tipo</label>
+                    <select id="tipo-transacao" name="tipo" required>
+                        <option value="entrada">Entrada</option>
+                        <option value="saida">Saída</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="categoria-transacao">Categoria</label>
+                    <select id="categoria-transacao" name="categoria_id" required>
+                        <option value="">Selecione uma categoria</option>
+                        <?php foreach ($categorias_transacoes as $categoria): ?>
+                        <option value="<?php echo $categoria['id']; ?>" data-tipo="<?php echo $categoria['tipo']; ?>">
+                            <?php echo htmlspecialchars($categoria['nome']); ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="descricao-transacao">Descrição</label>
+                    <input type="text" id="descricao-transacao" name="descricao" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="valor-transacao">Valor (R$)</label>
+                    <input type="number" id="valor-transacao" name="valor" step="0.01" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="data-transacao">Data</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="data-transacao" name="data" placeholder="dd/mm/aaaa" required readonly>
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-primary">Adicionar Transação</button>
+            </form>
+        </div>
+    </div>
+    
+        <div id="lista-transacoes" class="tab-content">
+        <h3>Lista de Transações</h3>
+        <div class="table-container">
+            <div class="form-group">
+                <input type="text" id="busca-transacoes" placeholder="Buscar por descrição ou categoria...">
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Tipo</th>
+                        <th>Categoria</th>
+                        <th>Descrição</th>
+                        <th>Valor (R$)</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($transacoes as $transacao): ?>
+                    <tr>
+                        <td data-label="Data"><?php echo formatarData($transacao['data']); ?></td>
+                        <td data-label="Tipo">
+                            <?php if ($transacao['tipo'] == 'entrada'): ?>
+                                <span style="color: var(--success-color);">Entrada</span>
+                            <?php else: ?>
+                                <span style="color: var(--error-color);">Saída</span>
+                            <?php endif; ?>
+                        </td>
+                        <td data-label="Categoria"><?php echo htmlspecialchars($transacao['categoria_nome']); ?></td>
+                        <td data-label="Descrição"><?php echo htmlspecialchars($transacao['descricao']); ?></td>
+                        <td data-label="Valor">
+                            <?php if ($transacao['tipo'] == 'entrada'): ?>
+                                <span style="color: var(--success-color);">+ R$ <?php echo number_format($transacao['valor'], 2, ',', '.'); ?></span>
+                            <?php else: ?>
+                                <span style="color: var(--error-color);">- R$ <?php echo number_format($transacao['valor'], 2, ',', '.'); ?></span>
+                            <?php endif; ?>
+                        </td>
+                        <td data-label="Ações">
+                            <button class="btn-primary btn-small" onclick="excluirTransacao(<?php echo $transacao['id']; ?>)">Excluir</button>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div id="gerenciar-precos" class="tab-content">
+    <h3>Gerenciar Preços de Inscrição</h3>
+    <div class="table-container">
+        <button class="btn-primary" onclick="abrirModal('adicionar-preco-modal')">Adicionar Preço</button>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Categoria</th>
+                    <th>Descrição</th>
+                    <th>Valor (R$)</th>
+                    <th>Lote</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php 
+                $stmt = $pdo->prepare("SELECT * FROM precos_inscricao ORDER BY categoria, lote");
+                $stmt->execute();
+                $precos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                foreach ($precos as $preco): 
+                ?>
+                <tr>
+                    <td data-label="Categoria"><?php echo htmlspecialchars($preco['categoria']); ?></td>
+                    <td data-label="Descrição"><?php echo htmlspecialchars($preco['descricao']); ?></td>
+                    <td data-label="Valor">R$ <?php echo number_format($preco['valor'], 2, ',', '.'); ?></td>
+                    <td data-label="Lote"><?php echo htmlspecialchars($preco['lote']); ?></td>
+                    <td data-label="Status"><?php echo $preco['ativo'] ? 'Ativo' : 'Inativo'; ?></td>
+                    <td data-label="Ações">
+                        <button class="btn-primary btn-small" onclick="editarPreco(<?php echo $preco['id']; ?>)">Editar</button>
+                         <button class="btn-primary btn-small" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" onclick="excluirPreco(<?php echo $preco['id']; ?>)">Excluir</button>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal para adicionar/editar preços -->
+<div class="modal" id="adicionar-preco-modal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="fecharModalPrecos()">&times;</button>
+        <h3>Adicionar Preço de Inscrição</h3>
+        <form id="adicionar-preco-form">
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+            <input type="hidden" id="preco-id" name="id" value="">
+            
+            <div class="form-group">
+                <label for="preco-categoria">Categoria</label>
+                <input type="text" id="preco-categoria" name="categoria" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="preco-descricao">Descrição</label>
+                <input type="text" id="preco-descricao" name="descricao" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="preco-valor">Valor (R$)</label>
+                <input type="number" id="preco-valor" name="valor" step="0.01" min="0" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="preco-lote">Lote</label>
+                <input type="text" id="preco-lote" name="lote" placeholder="Ex: 1, 2, regular">
+            </div>
+            
+            <div class="form-group">
+                <label for="preco-ativo">Status</label>
+                <select id="preco-ativo" name="ativo" required>
+                    <option value="1">Ativo</option>
+                    <option value="0">Inativo</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-primary">Salvar</button>
+            <button type="button" onclick="fecharModalPrecos()">Cancelar</button>
+        </form>
+    </div>
+</div></section>
+        </div>
+        
+        
     </div>
 
     <!-- Footer -->
@@ -2839,7 +3092,7 @@ function formatarDataHora($dataHora) {
             const formData = new FormData();
             formData.append('action', 'validar_pagamento');
             formData.append('id', id);
-            formData.append('aprovado', aprovado);
+            formData.append('aprovado', aprovado ? '1' : '0');
             formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
             
             fetch('painel_admin.php', {
@@ -3071,6 +3324,436 @@ function formatarDataHora($dataHora) {
                 window.location.href = 'logout.php';
             }
         });
+
+// Filtrar categorias com base no tipo selecionado
+document.getElementById('tipo-transacao').addEventListener('change', function() {
+    const tipo = this.value;
+    const categoriaSelect = document.getElementById('categoria-transacao');
+    const options = categoriaSelect.options;
+    
+    for (let i = 0; i < options.length; i++) {
+        const option = options[i];
+        if (option.value === '') continue;
+        
+        if (option.getAttribute('data-tipo') === tipo) {
+            option.style.display = '';
+        } else {
+            option.style.display = 'none';
+            if (option.selected) {
+                option.selected = false;
+                categoriaSelect.value = '';
+            }
+        }
+    }
+});
+
+// Inicializar flatpickr para a data da transação
+flatpickr("#data-transacao", {
+    dateFormat: "d/m/Y",
+    locale: "pt",
+    allowInput: false,
+    clickOpens: true
+});
+
+// Formulário de adição de transação
+document.getElementById('adicionar-transacao-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('painel_admin.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            exibirMensagem('Transação adicionada com sucesso!', 'sucesso');
+            this.reset();
+            // Recarregar a página para atualizar a lista e os totais
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            exibirMensagem('Erro: ' + data.message, 'erro');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        exibirMensagem('Erro ao adicionar transação.', 'erro');
+    });
+});
+
+// Função para excluir transação
+function excluirTransacao(id) {
+    if (!confirm('Tem certeza que deseja excluir esta transação?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'excluir_transacao');
+    formData.append('id', id);
+    formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
+    
+    fetch('painel_admin.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            exibirMensagem('Transação excluída com sucesso!', 'sucesso');
+            // Recarregar a página para atualizar a lista e os totais
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            exibirMensagem('Erro: ' + data.message, 'erro');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        exibirMensagem('Erro ao excluir transação.', 'erro');
+    });
+}
+
+// Versão melhorada da função de exclusão com feedback visual
+function excluirPreco(id) {
+    if (!confirm('Tem certeza que deseja excluir este preço? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+    
+    const linha = document.querySelector(`tr[data-preco-id="${id}"]`);
+    if (linha) {
+        linha.classList.add('deleting');
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'excluir_preco');
+    formData.append('id', id);
+    formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
+    
+    fetch('painel_admin.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            exibirMensagem('Preço excluído com sucesso!', 'sucesso');
+            
+            // Remover a linha da tabela com animação
+            if (linha) {
+                linha.style.transition = 'all 0.3s ease';
+                linha.style.opacity = '0';
+                linha.style.height = '0';
+                
+                setTimeout(() => {
+                    linha.remove();
+                    atualizarContadores();
+                }, 300);
+            }
+        } else {
+            exibirMensagem('Erro: ' + data.message, 'erro');
+            if (linha) {
+                linha.classList.remove('deleting');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        exibirMensagem('Erro ao excluir preço.', 'erro');
+        if (linha) {
+            linha.classList.remove('deleting');
+        }
+    });
+}
+// Função para resetar o modal quando fechado
+function fecharModalPrecos() {
+    document.getElementById('preco-id').value = '';
+    document.querySelector('#adicionar-preco-modal h3').textContent = 'Adicionar Preço de Inscrição';
+    fecharModal('adicionar-preco-modal');
+}
+
+// Adicionar evento de submit para o formulário de preços
+document.getElementById('adicionar-preco-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    // Determinar a ação (adicionar ou editar)
+    const precoId = document.getElementById('preco-id').value;
+    formData.append('action', precoId ? 'editar_preco' : 'adicionar_preco');
+    
+    fetch('painel_admin.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            exibirMensagem(precoId ? 'Preço atualizado com sucesso!' : 'Preço adicionado com sucesso!', 'sucesso');
+            fecharModalPrecos();
+            // Recarregar a página para atualizar a lista
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            exibirMensagem('Erro: ' + data.message, 'erro');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        exibirMensagem('Erro ao salvar preço.', 'erro');
+    });
+});
+
+// Busca em transações
+document.getElementById('busca-transacoes').addEventListener('input', function() {
+    const termo = this.value.toLowerCase();
+    const linhas = document.querySelectorAll('#lista-transacoes .data-table tbody tr');
+    
+    linhas.forEach(linha => {
+        const textoLinha = linha.textContent.toLowerCase();
+        linha.style.display = textoLinha.includes(termo) ? '' : 'none';
+    });
+});
+
+// Função para excluir preço
+function excluirPreco(id) {
+    if (!confirm('Tem certeza que deseja excluir este preço? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'excluir_preco');
+    formData.append('id', id);
+    formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
+    
+    fetch('painel_admin.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            exibirMensagem('Preço excluído com sucesso!', 'sucesso');
+            // Recarregar a página para atualizar a lista
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            exibirMensagem('Erro: ' + data.message, 'erro');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        exibirMensagem('Erro ao excluir preço.', 'erro');
+    });
+}
+// Sistema de histórico de navegação para abas
+function initNavigationHistory() {
+    // Verificar se há um hash na URL ao carregar a página
+    const hash = window.location.hash;
+    
+    if (hash) {
+        // Exemplo: #contabilidade-gerenciar-precos
+        const parts = hash.split('-');
+        if (parts.length >= 2) {
+            const section = parts[0].replace('#', '');
+            const tab = parts.slice(1).join('-');
+            
+            // Ativar a seção
+            if (section && document.querySelector(`.admin-nav[data-section="${section}"]`)) {
+                document.querySelectorAll('.admin-nav').forEach(l => l.classList.remove('active'));
+                document.querySelector(`.admin-nav[data-section="${section}"]`).classList.add('active');
+                
+                document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+                document.getElementById(`${section}-section`).classList.add('active');
+                
+                // Ativar a aba se especificada
+                if (tab && document.querySelector(`.tab-link[data-tab="${tab}"]`)) {
+                    document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    document.querySelector(`.tab-link[data-tab="${tab}"]`).classList.add('active');
+                    document.getElementById(tab).classList.add('active');
+                }
+            }
+        }
+    }
+    
+    // Adicionar event listeners para as abas
+    document.querySelectorAll('.tab-link').forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const tabId = this.getAttribute('data-tab');
+            const section = document.querySelector('.admin-section.active').id.replace('-section', '');
+            
+            // Ativar a aba
+            document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            this.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            
+            // Atualizar o histórico
+            history.pushState({ section, tab: tabId }, '', `#${section}-${tabId}`);
+        });
+    });
+    
+    // Adicionar event listeners para os links de navegação
+    document.querySelectorAll('.admin-nav').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const section = this.getAttribute('data-section');
+            
+            // Ativar link
+            document.querySelectorAll('.admin-nav').forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Mostrar seção correspondente
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(section + '-section').classList.add('active');
+            
+            // Ativar a primeira aba da seção
+            const firstTab = document.querySelector(`#${section}-section .tab-link`);
+            if (firstTab) {
+                const tabId = firstTab.getAttribute('data-tab');
+                document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                firstTab.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+                
+                // Atualizar o histórico
+                history.pushState({ section, tab: tabId }, '', `#${section}-${tabId}`);
+            } else {
+                // Atualizar o histórico sem aba específica
+                history.pushState({ section }, '', `#${section}`);
+            }
+            
+            // Salvar a seção atual no localStorage
+            localStorage.setItem('currentSection', section);
+        });
+    });
+    
+    // Lidar com o botão voltar/avançar do navegador
+    window.addEventListener('popstate', function(event) {
+        if (event.state) {
+            const { section, tab } = event.state;
+            
+            // Ativar a seção
+            if (section && document.querySelector(`.admin-nav[data-section="${section}"]`)) {
+                document.querySelectorAll('.admin-nav').forEach(l => l.classList.remove('active'));
+                document.querySelector(`.admin-nav[data-section="${section}"]`).classList.add('active');
+                
+                document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+                document.getElementById(`${section}-section`).classList.add('active');
+                
+                // Ativar a aba se especificada
+                if (tab && document.querySelector(`.tab-link[data-tab="${tab}"]`)) {
+                    document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    document.querySelector(`.tab-link[data-tab="${tab}"]`).classList.add('active');
+                    document.getElementById(tab).classList.add('active');
+                }
+            }
+        }
+    });
+}
+
+// Inicializar o sistema de navegação quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', function() {
+    initNavigationHistory();
+    
+    // Restaurar a seção salva no localStorage
+    const savedSection = localStorage.getItem('currentSection');
+    if (savedSection && document.querySelector(`.admin-nav[data-section="${savedSection}"]`)) {
+        document.querySelector(`.admin-nav[data-section="${savedSection}"]`).click();
+    }
+});
+
+// Função para editar preço
+function editarPreco(id) {
+    // Buscar dados do preço via AJAX
+    const formData = new FormData();
+    formData.append('action', 'buscar_preco');
+    formData.append('id', id);
+    formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
+    
+    fetch('painel_admin.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Preencher o formulário com os dados do preço
+            document.getElementById('preco-id').value = data.preco.id;
+            document.getElementById('preco-categoria').value = data.preco.categoria;
+            document.getElementById('preco-descricao').value = data.preco.descricao;
+            document.getElementById('preco-valor').value = data.preco.valor;
+            document.getElementById('preco-lote').value = data.preco.lote;
+            document.getElementById('preco-ativo').value = data.preco.ativo;
+            
+            // Alterar o título do modal para edição
+            document.querySelector('#adicionar-preco-modal h3').textContent = 'Editar Preço de Inscrição';
+            
+            // Abrir o modal
+            abrirModal('adicionar-preco-modal');
+        } else {
+            exibirMensagem('Erro ao carregar dados: ' + data.message, 'erro');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        exibirMensagem('Erro ao carregar dados do preço.', 'erro');
+    });
+}
+
+// Função para resetar o modal quando fechado
+function fecharModalPrecos() {
+    document.getElementById('preco-id').value = '';
+    document.querySelector('#adicionar-preco-modal h3').textContent = 'Adicionar Preço de Inscrição';
+    fecharModal('adicionar-preco-modal');
+}
+
+// Adicionar evento de submit para o formulário de preços
+document.getElementById('adicionar-preco-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    // Determinar a ação (adicionar ou editar)
+    const precoId = document.getElementById('preco-id').value;
+    formData.append('action', precoId ? 'editar_preco' : 'adicionar_preco');
+    
+    fetch('painel_admin.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            exibirMensagem(precoId ? 'Preço atualizado com sucesso!' : 'Preço adicionado com sucesso!', 'sucesso');
+            fecharModalPrecos();
+            // Recarregar a página para atualizar a lista
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            exibirMensagem('Erro: ' + data.message, 'erro');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        exibirMensagem('Erro ao salvar preço.', 'erro');
+    });
+});
     </script>
 </body>
 </html>
