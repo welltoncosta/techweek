@@ -23,51 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
-    // Ação: Sincronizar comprovantes antigos
-    if (isset($_POST['action']) && $_POST['action'] === 'sincronizar_comprovantes_antigos') {
-        try {
-            // Buscar comprovantes aprovados que não têm transações
-            $stmt = $pdo->prepare("SELECT c.*, p.nome as participante_nome, p.valor_pago 
-                                  FROM comprovantes c 
-                                  JOIN participantes p ON c.participante_id = p.id 
-                                  WHERE c.status = 'aprovado' 
-                                  AND c.id NOT IN (SELECT comprovante_id FROM transacoes WHERE comprovante_id IS NOT NULL)");
-            $stmt->execute();
-            $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            $count = 0;
-            foreach ($comprovantes as $comprovante) {
-                // Criar transação para cada comprovante
-                $stmt = $pdo->prepare("INSERT INTO transacoes 
-                                      (categoria_id, descricao, valor, data, tipo, comprovante_id, participante_id) 
-                                      VALUES 
-                                      (:categoria_id, :descricao, :valor, :data, 'entrada', :comprovante_id, :participante_id)");
-                
-                $stmt->execute([
-                    ':categoria_id' => 1, // ID da categoria "Inscrições"
-                    ':descricao' => 'Inscrição - ' . $comprovante['participante_nome'],
-                    ':valor' => $comprovante['valor_pago'],
-                    ':data' => date('Y-m-d', strtotime($comprovante['data_avaliacao'])),
-                    ':comprovante_id' => $comprovante['id'],
-                    ':participante_id' => $comprovante['participante_id']
-                ]);
-                
-                $count++;
-            }
-            
-            $response['success'] = true;
-            $response['message'] = "Foram criadas $count transações para comprovantes antigos.";
-        } catch (PDOException $e) {
-            $response['message'] = 'Erro ao sincronizar comprovantes: ' . $e->getMessage();
-        }
-        
-        header('Content-Type: application/json');
-        echo json_encode($response);
-        exit;
-    }
-    
-    // Outras ações do POST...
-    // ... (código existente para outras ações)
     
     // Se for uma requisição AJAX, retornar JSON
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -1487,6 +1442,14 @@ function obterTipoInscricao($tipo) {
                             <li><a href="#comprovantes" class="admin-nav" data-section="comprovantes">Comprovantes</a></li>
                             <li><a href="#contabilidade" class="admin-nav" data-section="contabilidade">Contabilidade</a></li>
                         </ul>
+
+                        <!-- Botão para sincronizar comprovantes -->
+            <div style="margin: 20px 0;">
+                <button class="btn-primary" onclick="sincronizarComprovantes()">Sincronizar Comprovantes Antigos</button>
+                <p style="color: var(--light-gray); font-size: 0.9rem; margin-top: 8px;">
+                    Este botão cria transações para comprovantes aprovados que ainda não foram registrados na contabilidade.
+                </p>
+            </div>
                     </div>
                     
                     <div class="admin-content">
@@ -2083,33 +2046,31 @@ function obterTipoInscricao($tipo) {
                     </div>
                 </div>
             </section>
-
-            <!-- Na seção de admin-content, adicionar a seção de contabilidade -->
+<!-- Seção de Contabilidade -->
             <section id="contabilidade-section" class="admin-section">
                 <h2>Contabilidade do Evento</h2>
                 
-                <!-- Modificar o dashboard de contabilidade para incluir as classes de cor -->
-    <div class="dashboard-cards">
-        <div class="dashboard-card">
-            <i class="fas fa-money-bill-wave"></i>
-            <h3>Total de Entradas</h3>
-            <p>R$ <?php echo number_format($total_entradas, 2, ',', '.'); ?></p>
-        </div>
-        
-        <div class="dashboard-card saidas-card">
-            <i class="fas fa-money-bill-wave"></i>
-            <h3>Total de Saídas</h3>
-            <p>R$ <?php echo number_format($total_saidas, 2, ',', '.'); ?></p>
-        </div>
-        
-        <div class="dashboard-card">
-            <i class="fas fa-money-bill-wave"></i>
-            <h3>Saldo</h3>
-            <p class="<?php echo $saldo < 0 ? 'saldo-negativo' : 'saldo-positivo'; ?>">
-                R$ <?php echo number_format($saldo, 2, ',', '.'); ?>
-            </p>
-        </div>
-    </div>
+                <div class="dashboard-cards">
+                    <div class="dashboard-card">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <h3>Total de Entradas</h3>
+                        <p>R$ <?php echo number_format($total_entradas, 2, ',', '.'); ?></p>
+                    </div>
+                    
+                    <div class="dashboard-card saidas-card">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <h3>Total de Saídas</h3>
+                        <p>R$ <?php echo number_format($total_saidas, 2, ',', '.'); ?></p>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <h3>Saldo</h3>
+                        <p class="<?php echo $saldo < 0 ? 'saldo-negativo' : 'saldo-positivo'; ?>">
+                            R$ <?php echo number_format($saldo, 2, ',', '.'); ?>
+                        </p>
+                    </div>
+                </div>
                 
                 <div class="tabs">
                     <button class="tab-link active" data-tab="lista-transacoes">Lista de Transações</button>
@@ -2167,7 +2128,7 @@ function obterTipoInscricao($tipo) {
                     </div>
                 </div>
                 
-                    <div id="lista-transacoes" class="tab-content">
+                <div id="lista-transacoes" class="tab-content">
                     <h3>Lista de Transações</h3>
                     <div class="table-container">
                         <div class="form-group">
@@ -2176,6 +2137,7 @@ function obterTipoInscricao($tipo) {
                         <table class="data-table">
                             <thead>
                                 <tr>
+                                    <th class="numero-lista">Nº</th>
                                     <th>Data</th>
                                     <th>Tipo</th>
                                     <th>Categoria</th>
@@ -2185,8 +2147,9 @@ function obterTipoInscricao($tipo) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($transacoes as $transacao): ?>
+                                <?php $contador = 1; foreach ($transacoes as $transacao): ?>
                                 <tr>
+                                    <td data-label="Nº" class="numero-lista"><?php echo $contador++; ?></td>
                                     <td data-label="Data"><?php echo formatarData($transacao['data']); ?></td>
                                     <td data-label="Tipo">
                                         <?php if ($transacao['tipo'] == 'entrada'): ?>
@@ -2199,9 +2162,9 @@ function obterTipoInscricao($tipo) {
                                     <td data-label="Descrição"><?php echo htmlspecialchars($transacao['descricao']); ?></td>
                                     <td data-label="Valor">
                                         <?php if ($transacao['tipo'] == 'entrada'): ?>
-                                            <span style="color: var(--success-color);">+ R$ <?php echo number_format($transacao['valor'], 2, ',', '.'); ?></span>
+                                            <span style="color: var(--success-color);">+ R$ <?php echo number_format($transacao['valor_correto'], 2, ',', '.'); ?></span>
                                         <?php else: ?>
-                                            <span style="color: var(--error-color);">- R$ <?php echo number_format($transacao['valor'], 2, ',', '.'); ?></span>
+                                            <span style="color: var(--error-color);">- R$ <?php echo number_format($transacao['valor_correto'], 2, ',', '.'); ?></span>
                                         <?php endif; ?>
                                     </td>
                                     <td data-label="Ações">

@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+date_default_timezone_set('America/Sao_Paulo'); // Definir fuso horário correto
 
 // Verificar se o usuário está logado e é administrador
 if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']) || $_SESSION['usuario_administrador'] != 1) {
@@ -11,15 +11,14 @@ if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']) || $_SESSION['us
 // Incluir arquivo de conexão
 include("conexao.php");
 
-
 // Processar ações do formulário
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
     $response = ['success' => false, 'message' => 'Ação não reconhecida'];
 
     // Verificar token CSRF (simplificado para este exemplo)
     if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
         $response['message'] = 'Token de segurança inválido';
+        header('Content-Type: application/json');
         echo json_encode($response);
         exit;
     }
@@ -33,10 +32,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $telefone = $_POST['telefone'];
         $instituicao = $_POST['instituicao'];
         $tipo = $_POST['tipo'];
-    
+        $tipo_inscricao = $_POST['tipo_inscricao'];
     
         try {
-            $stmt = $pdo->prepare("UPDATE participantes SET nome = :nome, email = :email, cpf = :cpf, telefone = :telefone, instituicao = :instituicao, tipo = :tipo WHERE id = :id");
+            $stmt = $pdo->prepare("UPDATE participantes SET nome = :nome, email = :email, cpf = :cpf, telefone = :telefone, instituicao = :instituicao, tipo = :tipo, tipo_inscricao = :tipo_inscricao WHERE id = :id");
             $stmt->execute([
                 ':nome' => $nome,
                 ':email' => $email,
@@ -44,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':telefone' => $telefone,
                 ':instituicao' => $instituicao,
                 ':tipo' => $tipo,
+                ':tipo_inscricao' => $tipo_inscricao,
                 ':id' => $id
             ]);
             
@@ -53,13 +53,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $response['message'] = 'Erro ao atualizar participante: ' . $e->getMessage();
         }
         
+        header('Content-Type: application/json');
         echo json_encode($response);
+        exit;
     }
     
     // Ação: Buscar participante
-    
     if (isset($_POST['action']) && $_POST['action'] === 'buscar_participante') {
-    
         $id = $_POST['id'];
     
         try {
@@ -77,8 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $response['message'] = 'Erro ao buscar participante: ' . $e->getMessage();
         }
         
-        echo json_encode($response); 
-     }
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    }
 
     // Ação: Buscar atividade
     if (isset($_POST['action']) && $_POST['action'] === 'buscar_atividade') {
@@ -98,12 +100,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             $response['message'] = 'Erro ao buscar atividade: ' . $e->getMessage();
         }
+        
+        header('Content-Type: application/json');
         echo json_encode($response);
+        exit;
     }
 
     // Ação: Visualizar comprovante
     if (isset($_POST['action']) && $_POST['action'] === 'visualizar_comprovante') {
-         $id = $_POST['id'];
+        $id = $_POST['id'];
     
         try {
             $stmt = $pdo->prepare("SELECT * FROM comprovantes WHERE id = :id");
@@ -120,17 +125,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             $response['message'] = 'Erro ao buscar comprovante: ' . $e->getMessage();
         }
+        
+        header('Content-Type: application/json');
         echo json_encode($response);
+        exit;
     }
     
     // Ação: Alternar status de administrador
     if (isset($_POST['action']) && $_POST['action'] === 'toggle_admin') {
-    
         $id = $_POST['id'];
         $administrador = $_POST['administrador'];
         
         if($_POST["administrador"]){ $tipo="administrador";}
         else if(!$_POST["administrador"]){ $tipo="participante";}
+        
         try {
             $stmt = $pdo->prepare("UPDATE participantes SET administrador = :administrador, tipo = :tipo WHERE id = :id");
             $stmt->execute([
@@ -144,7 +152,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             $response['message'] = 'Erro ao atualizar status: ' . $e->getMessage();
         }
+        
+        header('Content-Type: application/json');
         echo json_encode($response);
+        exit;
     }
     
     // Ação: Cadastrar atividade
@@ -176,7 +187,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             $response['message'] = 'Erro ao cadastrar atividade: ' . $e->getMessage();
         }
+        
+        header('Content-Type: application/json');
         echo json_encode($response);
+        exit;
     }
     
     // Ação: Editar atividade
@@ -210,7 +224,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             $response['message'] = 'Erro ao atualizar atividade: ' . $e->getMessage();
         }
+        
+        header('Content-Type: application/json');
         echo json_encode($response);
+        exit;
     }
     
     // Ação: Registrar presença
@@ -253,61 +270,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             $response['message'] = 'Erro ao registrar presença: ' . $e->getMessage();
         }
+        
+        header('Content-Type: application/json');
         echo json_encode($response);
+        exit;
     }
     
     // Ação: Validar pagamento (com adição de transação)
-if (isset($_POST['action']) && $_POST['action'] === 'validar_pagamento') {
-   $id = $_POST['id'];
-                $aprovado = $_POST['aprovado'] == '1';
+    if (isset($_POST['action']) && $_POST['action'] === 'validar_pagamento') {
+        $id = $_POST['id'];
+        $aprovado = $_POST['aprovado'] == '1';
+        
+        // Buscar informações do comprovante
+        $stmt = $pdo->prepare("SELECT c.*, p.nome as participante_nome, p.valor_pago 
+                              FROM comprovantes c 
+                              JOIN participantes p ON c.participante_id = p.id 
+                              WHERE c.id = :id");
+        $stmt->execute([':id' => $id]);
+        $comprovante = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($comprovante) {
+            // Atualizar status do comprovante
+            $status = $aprovado ? 'aprovado' : 'rejeitado';
+            $stmt = $pdo->prepare("UPDATE comprovantes SET status = :status, data_avaliacao = NOW() WHERE id = :id");
+            $stmt->execute([':status' => $status, ':id' => $id]);
+            
+            // Se foi aprovado, criar uma transação correspondente
+            if ($aprovado) {
+                // Verificar si já existe uma transação para este comprovante
+                $stmt = $pdo->prepare("SELECT id FROM transacoes WHERE comprovante_id = :comprovante_id");
+                $stmt->execute([':comprovante_id' => $id]);
+                $transacao_existente = $stmt->fetch(PDO::FETCH_ASSOC);
                 
-                // Buscar informações do comprovante
-                $stmt = $pdo->prepare("SELECT c.*, p.nome as participante_nome, p.valor_pago 
-                                      FROM comprovantes c 
-                                      JOIN participantes p ON c.participante_id = p.id 
-                                      WHERE c.id = :id");
-                $stmt->execute([':id' => $id]);
-                $comprovante = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                if ($comprovante) {
-                    // Atualizar status do comprovante
-                    $status = $aprovado ? 'aprovado' : 'rejeitado';
-                    $stmt = $pdo->prepare("UPDATE comprovantes SET status = :status, data_avaliacao = NOW() WHERE id = :id");
-                    $stmt->execute([':status' => $status, ':id' => $id]);
+                if (!$transacao_existente) {
+                    // Criar nova transação de entrada
+                    $stmt = $pdo->prepare("INSERT INTO transacoes 
+                                        (categoria_id, descricao, valor, data, tipo, comprovante_id, participante_id) 
+                                        VALUES 
+                                        (:categoria_id, :descricao, :valor, :data, 'entrada', :comprovante_id, :participante_id)");
                     
-                    // Se foi aprovado, criar uma transação correspondente
-                    if ($aprovado) {
-                        // Verificar se já existe uma transação para este comprovante
-                        $stmt = $pdo->prepare("SELECT id FROM transacoes WHERE comprovante_id = :comprovante_id");
-                        $stmt->execute([':comprovante_id' => $id]);
-                        $transacao_existente = $stmt->fetch(PDO::FETCH_ASSOC);
-                        
-                        if (!$transacao_existente) {
-                            // Criar nova transação de entrada
-                            $stmt = $pdo->prepare("INSERT INTO transacoes 
-                                                (categoria_id, descricao, valor, data, tipo, comprovante_id, participante_id) 
-                                                VALUES 
-                                                (:categoria_id, :descricao, :valor, :data, 'entrada', :comprovante_id, :participante_id)");
-                            
-                            $stmt->execute([
-                                ':categoria_id' => 1, // ID da categoria "Inscrições"
-                                ':descricao' => 'Inscrição - ' . $comprovante['participante_nome'],
-                                ':valor' => $comprovante['valor_pago'],
-                                ':data' => date('Y-m-d'),
-                                ':comprovante_id' => $id,
-                                ':participante_id' => $comprovante['participante_id']
-                            ]);
-                        }
-                    }
-                    
-                    $response['success'] = true;
-                    $response['message'] = 'Comprovante ' . ($aprovado ? 'aprovado' : 'rejeitado') . ' com sucesso!';
-                } else {
-                    $response['message'] = 'Comprovante não encontrado!';
+                    $stmt->execute([
+                        ':categoria_id' => 1, // ID da categoria "Inscrições"
+                        ':descricao' => 'Inscrição - ' . $comprovante['participante_nome'],
+                        ':valor' => $comprovante['valor_pago'],
+                        ':data' => date('Y-m-d'),
+                        ':comprovante_id' => $id,
+                        ':participante_id' => $comprovante['participante_id']
+                    ]);
                 }
-    
-    echo json_encode($response);
-}
+            }
+            
+            $response['success'] = true;
+            $response['message'] = 'Comprovante ' . ($aprovado ? 'aprovado' : 'rejeitado') . ' com sucesso!';
+        } else {
+            $response['message'] = 'Comprovante não encontrado!';
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    }
     
     // Ação: Adicionar transação manualmente
     if (isset($_POST['action']) && $_POST['action'] === 'adicionar_transacao') {
@@ -333,7 +355,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'validar_pagamento') {
         } catch (PDOException $e) {
             $response['message'] = 'Erro ao adicionar transação: ' . $e->getMessage();
         }
+        
+        header('Content-Type: application/json');
         echo json_encode($response);
+        exit;
     }
     
     // Ação: Excluir transação
@@ -350,145 +375,223 @@ if (isset($_POST['action']) && $_POST['action'] === 'validar_pagamento') {
             $response['message'] = 'Erro ao excluir transação: ' . $e->getMessage();
         }
         
+        header('Content-Type: application/json');
         echo json_encode($response);
+        exit;
     }
     
     // Ação: Buscar preço
-if (isset($_POST['action']) && $_POST['action'] === 'buscar_preco') {
-    $id = $_POST['id'];
-    
-    try {
-        $stmt = $pdo->prepare("SELECT * FROM precos_inscricao WHERE id = :id");
-        $stmt->execute([':id' => $id]);
-        $preco = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (isset($_POST['action']) && $_POST['action'] === 'buscar_preco') {
+        $id = $_POST['id'];
         
-        if ($preco) {
-            $response['success'] = true;
-            $response['preco'] = $preco;
-        } else {
-            $response['message'] = 'Preço não encontrado';
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM precos_inscricao WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $preco = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($preco) {
+                $response['success'] = true;
+                $response['preco'] = $preco;
+            } else {
+                $response['message'] = 'Preço não encontrado';
+            }
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao buscar preço: ' . $e->getMessage();
         }
-    } catch (PDOException $e) {
-        $response['message'] = 'Erro ao buscar preço: ' . $e->getMessage();
-    }
-    echo json_encode($response);
-}
-
-// Ação: Adicionar preço
-if (isset($_POST['action']) && $_POST['action'] === 'adicionar_preco') {
-    $categoria = $_POST['categoria'];
-    $descricao = $_POST['descricao'];
-    $valor = $_POST['valor'];
-    $lote = $_POST['lote'];
-    $ativo = $_POST['ativo'];
-    
-    try {
-        $stmt = $pdo->prepare("INSERT INTO precos_inscricao (categoria, descricao, valor, lote, ativo) VALUES (:categoria, :descricao, :valor, :lote, :ativo)");
-        $stmt->execute([
-            ':categoria' => $categoria,
-            ':descricao' => $descricao,
-            ':valor' => $valor,
-            ':lote' => $lote,
-            ':ativo' => $ativo
-        ]);
         
-        $response['success'] = true;
-        $response['message'] = 'Preço adicionado com sucesso';
-    } catch (PDOException $e) {
-        $response['message'] = 'Erro ao adicionar preço: ' . $e->getMessage();
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
     }
-    echo json_encode($response);
-}
 
-// Ação: Editar preço
-if (isset($_POST['action']) && $_POST['action'] === 'editar_preco') {
-    $id = $_POST['id'];
-    $categoria = $_POST['categoria'];
-    $descricao = $_POST['descricao'];
-    $valor = $_POST['valor'];
-    $lote = $_POST['lote'];
-    $ativo = $_POST['ativo'];
-    
-    try {
-        $stmt = $pdo->prepare("UPDATE precos_inscricao SET categoria = :categoria, descricao = :descricao, valor = :valor, lote = :lote, ativo = :ativo WHERE id = :id");
-        $stmt->execute([
-            ':categoria' => $categoria,
-            ':descricao' => $descricao,
-            ':valor' => $valor,
-            ':lote' => $lote,
-            ':ativo' => $ativo,
-            ':id' => $id
-        ]);
+    // Ação: Adicionar preço
+    if (isset($_POST['action']) && $_POST['action'] === 'adicionar_preco') {
+        $categoria = $_POST['categoria'];
+        $descricao = $_POST['descricao'];
+        $valor = $_POST['valor'];
+        $lote = $_POST['lote'];
+        $ativo = $_POST['ativo'];
         
-        $response['success'] = true;
-        $response['message'] = 'Preço atualizado com sucesso';
-    } catch (PDOException $e) {
-        $response['message'] = 'Erro ao editar preço: ' . $e->getMessage();
-    }
-    echo json_encode($response);
-}
-
-    
-// Ação: Cadastrar participante
-if (isset($_POST['action']) && $_POST['action'] === 'cadastrar_participante') {
-    $nome = $_POST['nome'];
-    $email = $_POST['email'];
-    $cpf = $_POST['cpf'];
-    $telefone = $_POST['telefone'];
-    $instituicao = $_POST['instituicao'];
-    $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
-    $tipo = $_POST['tipo'];
-    $voucher = $_POST['voucher'];
-    $isento_pagamento = isset($_POST['isento_pagamento']) ? 1 : 0;
-    
-    // Gerar código de barras único
-    $codigo_barra = uniqid('TW');
-    
-    try {
-        $stmt = $pdo->prepare("INSERT INTO participantes (nome, email, cpf, telefone, instituicao, senha, tipo, codigo_barra, voucher, isento_pagamento) VALUES (:nome, :email, :cpf, :telefone, :instituicao, :senha, :tipo, :codigo_barra, :voucher, :isento_pagamento)");
-        $stmt->execute([
-            ':nome' => $nome,
-            ':email' => $email,
-            ':cpf' => $cpf,
-            ':telefone' => $telefone,
-            ':instituicao' => $instituicao,
-            ':senha' => $senha,
-            ':tipo' => $tipo,
-            ':codigo_barra' => $codigo_barra,
-            ':voucher' => $voucher,
-            ':isento_pagamento' => $isento_pagamento
-        ]);
+        try {
+            $stmt = $pdo->prepare("INSERT INTO precos_inscricao (categoria, descricao, valor, lote, ativo) VALUES (:categoria, :descricao, :valor, :lote, :ativo)");
+            $stmt->execute([
+                ':categoria' => $categoria,
+                ':descricao' => $descricao,
+                ':valor' => $valor,
+                ':lote' => $lote,
+                ':ativo' => $ativo
+            ]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Preço adicionado com sucesso';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao adicionar preço: ' . $e->getMessage();
+        }
         
-        $response['success'] = true;
-        $response['message'] = 'Participante cadastrado com sucesso';
-    } catch (PDOException $e) {
-        $response['message'] = 'Erro ao cadastrar participante: ' . $e->getMessage();
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
     }
 
-    echo json_encode($response);
-}
-
-// Ação: Alternar status de atividade
-if (isset($_POST['action']) && $_POST['action'] === 'toggle_ativa') {
-    $id = $_POST['id'];
-    $ativa = $_POST['ativa'] ? 1 : 0;
-    
-    try {
-        $stmt = $pdo->prepare("UPDATE atividades SET ativa = :ativa WHERE id = :id");
-        $stmt->execute([
-            ':ativa' => $ativa,
-            ':id' => $id
-        ]);
+    // Ação: Editar preço
+    if (isset($_POST['action']) && $_POST['action'] === 'editar_preco') {
+        $id = $_POST['id'];
+        $categoria = $_POST['categoria'];
+        $descricao = $_POST['descricao'];
+        $valor = $_POST['valor'];
+        $lote = $_POST['lote'];
+        $ativo = $_POST['ativo'];
         
-        $response['success'] = true;
-        $response['message'] = 'Status da atividade atualizado';
-    } catch (PDOException $e) {
-        $response['message'] = 'Erro ao atualizar status: ' . $e->getMessage();
+        try {
+            $stmt = $pdo->prepare("UPDATE precos_inscricao SET categoria = :categoria, descricao = :descricao, valor = :valor, lote = :lote, ativo = :ativo WHERE id = :id");
+            $stmt->execute([
+                ':categoria' => $categoria,
+                ':descricao' => $descricao,
+                ':valor' => $valor,
+                ':lote' => $lote,
+                ':ativo' => $ativo,
+                ':id' => $id
+            ]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Preço atualizado com sucesso';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao editar preço: ' . $e->getMessage();
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    }
+    
+    // Ação: Cadastrar participante
+    if (isset($_POST['action']) && $_POST['action'] === 'cadastrar_participante') {
+        $nome = $_POST['nome'];
+        $email = $_POST['email'];
+        $cpf = $_POST['cpf'];
+        $telefone = $_POST['telefone'];
+        $instituicao = $_POST['instituicao'];
+        $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
+        $tipo = $_POST['tipo'];
+        $tipo_inscricao = $_POST['tipo_inscricao'];
+        $voucher = $_POST['voucher'];
+        $isento_pagamento = isset($_POST['isento_pagamento']) ? 1 : 0;
+        
+        // Gerar código de barras único
+        $codigo_barra = uniqid('TW');
+        
+        try {
+            $stmt = $pdo->prepare("INSERT INTO participantes (nome, email, cpf, telefone, instituicao, senha, tipo, tipo_inscricao, codigo_barra, voucher, isento_pagamento) VALUES (:nome, :email, :cpf, :telefone, :instituicao, :senha, :tipo, :tipo_inscricao, :codigo_barra, :voucher, :isento_pagamento)");
+            $stmt->execute([
+                ':nome' => $nome,
+                ':email' => $email,
+                ':cpf' => $cpf,
+                ':telefone' => $telefone,
+                ':instituicao' => $instituicao,
+                ':senha' => $senha,
+                ':tipo' => $tipo,
+                ':tipo_inscricao' => $tipo_inscricao,
+                ':codigo_barra' => $codigo_barra,
+                ':voucher' => $voucher,
+                ':isento_pagamento' => $isento_pagamento
+            ]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Participante cadastrado com sucesso';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao cadastrar participante: ' . $e->getMessage();
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
     }
 
-	echo json_encode($response);
-}
+    // Ação: Alternar status de atividade
+    if (isset($_POST['action']) && $_POST['action'] === 'toggle_ativa') {
+        $id = $_POST['id'];
+        $ativa = $_POST['ativa'] ? 1 : 0;
+        
+        try {
+            $stmt = $pdo->prepare("UPDATE atividades SET ativa = :ativa WHERE id = :id");
+            $stmt->execute([
+                ':ativa' => $ativa,
+                ':id' => $id
+            ]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Status da atividade atualizado';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao atualizar status: ' . $e->getMessage();
+        }
 
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    }
+
+    // Ação: Excluir preço
+    if (isset($_POST['action']) && $_POST['action'] === 'excluir_preco') {
+        $id = $_POST['id'];
+        
+        try {
+            $stmt = $pdo->prepare("DELETE FROM precos_inscricao WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Preço excluído com sucesso';
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao excluir preço: ' . $e->getMessage();
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    }
+
+
+// Ação: Sincronizar comprovantes antigos
+    if (isset($_POST['action']) && $_POST['action'] === 'sincronizar_comprovantes_antigos') {
+        try {
+            // Buscar comprovantes aprovados que não têm transações
+            $stmt = $pdo->prepare("SELECT c.*, p.nome as participante_nome, p.valor_pago 
+                                  FROM comprovantes c 
+                                  JOIN participantes p ON c.participante_id = p.id 
+                                  WHERE c.status = 'aprovado' 
+                                  AND c.id NOT IN (SELECT comprovante_id FROM transacoes WHERE comprovante_id IS NOT NULL)");
+            $stmt->execute();
+            $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $count = 0;
+            foreach ($comprovantes as $comprovante) {
+                // Criar transação para cada comprovante
+                $stmt = $pdo->prepare("INSERT INTO transacoes 
+                                      (categoria_id, descricao, valor, data, tipo, comprovante_id, participante_id) 
+                                      VALUES 
+                                      (:categoria_id, :descricao, :valor, :data, 'entrada', :comprovante_id, :participante_id)");
+                
+                $stmt->execute([
+                    ':categoria_id' => 1, // ID da categoria "Inscrições"
+                    ':descricao' => 'Inscrição - ' . $comprovante['participante_nome'],
+                    ':valor' => $comprovante['valor_pago'],
+                    ':data' => date('Y-m-d', strtotime($comprovante['data_avaliacao'])),
+                    ':comprovante_id' => $comprovante['id'],
+                    ':participante_id' => $comprovante['participante_id']
+                ]);
+                
+                $count++;
+            }
+            
+            $response['success'] = true;
+            $response['message'] = "Foram criadas $count transações para comprovantes antigos.";
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao sincronizar comprovantes: ' . $e->getMessage();
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    }
 
     // Se for uma requisição AJAX, retornar JSON
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -498,27 +601,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'toggle_ativa') {
     }
 }
 
-// Ação: Excluir preço
-if (isset($_POST['action']) && $_POST['action'] === 'excluir_preco') {
-    $id = $_POST['id'];
-    
-    try {
-        $stmt = $pdo->prepare("DELETE FROM precos_inscricao WHERE id = :id");
-        $stmt->execute([':id' => $id]);
-        
-        $response['success'] = true;
-        $response['message'] = 'Preço excluído com sucesso';
-    } catch (PDOException $e) {
-        $response['message'] = 'Erro ao excluir preço: ' . $e->getMessage();
-    }
-     echo json_encode($response);
-}
-
-
-
 // Gerar token CSRF
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
-
-
