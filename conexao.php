@@ -3,7 +3,7 @@
 
 // Configurações de conexão com o banco de dados
 $host = 'localhost';
-$dbname = 'techweek';
+$dbname = 'u686345830_techweek_utfpr';
 $username = 'usuario';
 $password = '123';
 

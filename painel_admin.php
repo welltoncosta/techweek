@@ -258,67 +258,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Ação: Validar pagamento (com adição de transação)
 if (isset($_POST['action']) && $_POST['action'] === 'validar_pagamento') {
-    $id = $_POST['id'];
-    $aprovado = $_POST['aprovado'] == '1';
-    
-    try {
-        $status = $aprovado ? 'aprovado' : 'rejeitado';
-        $stmt = $pdo->prepare("UPDATE comprovantes SET status = :status, data_avaliacao = NOW() WHERE id = :id");
-        $stmt->execute([
-            ':status' => $status,
-            ':id' => $id
-        ]);
-        
-         // Se foi aprovado, verificar e ajustar o lote para universitários de TI
-    if ($aprovado) {
-        // Buscar informações do participante
-        $stmt = $pdo->prepare("SELECT p.* FROM comprovantes c JOIN participantes p ON c.participante_id = p.id WHERE c.id = :id");
-        $stmt->execute([':id' => $id]);
-        $participante = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($participante && $participante['tipo_inscricao'] === 'universitario_ti') {
-            // Contar quantos participantes já têm comprovante aprovado no lote 1
-            $stmt = $pdo->prepare("SELECT COUNT(DISTINCT p.id) as count 
-                                  FROM participantes p 
-                                  INNER JOIN comprovantes c ON p.id = c.participante_id 
-                                  WHERE p.tipo_inscricao = 'universitario_ti' 
-                                  AND p.lote_inscricao = '1' 
-                                  AND c.status = 'aprovado'");
-            $stmt->execute();
-            $countLote1 = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
-
-            $lote = ($countLote1 <= 50) ? '1' : '2';
-
-            // Buscar o preço do lote correspondente
-            $stmt = $pdo->prepare("SELECT valor FROM precos_inscricao WHERE categoria = 'universitario_ti' AND lote = :lote AND ativo = 1");
-            $stmt->execute([':lote' => $lote]);
-            $preco = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            $valor_inscricao = $preco ? $preco['valor'] : 0;
-
-            // Atualizar o lote e o valor pago pelo participante
-            $stmt = $pdo->prepare("UPDATE participantes SET lote_inscricao = :lote, valor_pago = :valor_pago WHERE id = :id");
-            $stmt->execute([
-                ':lote' => $lote,
-                ':valor_pago' => $valor_inscricao,
-                ':id' => $participante['id']
-            ]);
-
-            // Atualizar o valor da transação, se existir
-            $stmt = $pdo->prepare("UPDATE transacoes SET valor = :valor WHERE comprovante_id = :comprovante_id");
-            $stmt->execute([
-                ':valor' => $valor_inscricao,
-                ':comprovante_id' => $id
-            ]);
-        }
-    }
-    
-        
-        $response['success'] = true;
-        $response['message'] = 'Pagamento validado com sucesso';
-    } catch (PDOException $e) {
-        $response['message'] = 'Erro ao validar pagamento: ' . $e->getMessage();
-    }
+   $id = $_POST['id'];
+                $aprovado = $_POST['aprovado'] == '1';
+                
+                // Buscar informações do comprovante
+                $stmt = $pdo->prepare("SELECT c.*, p.nome as participante_nome, p.valor_pago 
+                                      FROM comprovantes c 
+                                      JOIN participantes p ON c.participante_id = p.id 
+                                      WHERE c.id = :id");
+                $stmt->execute([':id' => $id]);
+                $comprovante = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($comprovante) {
+                    // Atualizar status do comprovante
+                    $status = $aprovado ? 'aprovado' : 'rejeitado';
+                    $stmt = $pdo->prepare("UPDATE comprovantes SET status = :status, data_avaliacao = NOW() WHERE id = :id");
+                    $stmt->execute([':status' => $status, ':id' => $id]);
+                    
+                    // Se foi aprovado, criar uma transação correspondente
+                    if ($aprovado) {
+                        // Verificar se já existe uma transação para este comprovante
+                        $stmt = $pdo->prepare("SELECT id FROM transacoes WHERE comprovante_id = :comprovante_id");
+                        $stmt->execute([':comprovante_id' => $id]);
+                        $transacao_existente = $stmt->fetch(PDO::FETCH_ASSOC);
+                        
+                        if (!$transacao_existente) {
+                            // Criar nova transação de entrada
+                            $stmt = $pdo->prepare("INSERT INTO transacoes 
+                                                (categoria_id, descricao, valor, data, tipo, comprovante_id, participante_id) 
+                                                VALUES 
+                                                (:categoria_id, :descricao, :valor, :data, 'entrada', :comprovante_id, :participante_id)");
+                            
+                            $stmt->execute([
+                                ':categoria_id' => 1, // ID da categoria "Inscrições"
+                                ':descricao' => 'Inscrição - ' . $comprovante['participante_nome'],
+                                ':valor' => $comprovante['valor_pago'],
+                                ':data' => date('Y-m-d'),
+                                ':comprovante_id' => $id,
+                                ':participante_id' => $comprovante['participante_id']
+                            ]);
+                        }
+                    }
+                    
+                    $response['success'] = true;
+                    $response['message'] = 'Comprovante ' . ($aprovado ? 'aprovado' : 'rejeitado') . ' com sucesso!';
+                } else {
+                    $response['message'] = 'Comprovante não encontrado!';
+                }
     
     echo json_encode($response);
 }

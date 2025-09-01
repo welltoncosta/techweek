@@ -3136,18 +3136,29 @@
                         .then(data => {
                             if (data.success) {
                                 // Atualizar a linha da tabela sem recarregar
-                                const linha = document.querySelector(`tr:has(button[onclick="validarPagamento(${id}, ${aprovado})"])`)                      ;
+                                const linha = document.querySelector(`tr:has(button[onclick="validarPagamento(${id}, ${aprovado})"])`);
                                 linha.cells[2].innerHTML = aprovado ? '<span class="status-approved">Aprovado</span>' : '<span class="status-rejected">Rejeitado</span>';
                                 linha.cells[4].innerHTML = '<span>Processado</span>';
                                 
                                 exibirMensagem('Validação atualizada com sucesso!', 'sucesso');
+                                
+                                // Se foi aprovado, recarregar a seção de contabilidade para mostrar a nova transação
+                                if (aprovado) {
+                                    // Aguardar um pouco para garantir que o backend processou a transação
+                                    setTimeout(() => {
+                                        // Recarregar apenas a seção de contabilidade se estiver ativa
+                                        if (document.getElementById('contabilidade-section').classList.contains('active')) {
+                                            location.reload();
+                                        }
+                                    }, 1000);
+                                }
                             } else {
                                 exibirMensagem('Erro: ' + data.message, 'erro');
                             }
                         })
                         .catch(error => {
                             console.error('Erro:', error);
-                            exibirMensagem('Erro ao validar pagamento. Erro: ' + data.message, 'erro');
+                            exibirMensagem('Erro ao validar pagamento.', 'erro');
                         });
                     }
                     

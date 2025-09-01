@@ -61,6 +61,7 @@ $textos_categoria = [
     ]
 ];
 
+
 // Para universitários de TI, verificar se precisa mudar para o lote 2
 if ($categoria === 'universitario_ti' && $lote === '1' && $inscricoes_lote1 >= 50) {
     // Atualizar o participante para o lote 2 no banco de dados
@@ -136,6 +137,16 @@ $atividades_inscritas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $stmt = $pdo->prepare("SELECT * FROM comprovantes WHERE participante_id = :participante_id ORDER BY data_envio DESC");
 $stmt->execute([':participante_id' => $usuario['id']]);
 $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+// Verificar se existe comprovante aprovado
+$comprovante_aprovado = false;
+foreach ($comprovantes as $comp) {
+    if ($comp['status'] == 'aprovado') {
+        $comprovante_aprovado = true;
+        break;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -1512,7 +1523,24 @@ $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </section>
             
-            <!-- Valor da Inscrição Section -->
+
+<?php if ($comprovante_aprovado): ?>
+    <!-- Mensagem de pagamento processado -->
+    <section id="pagamento-aprovado" style="margin-top: 40px;">
+        <div class="container">
+            <div class="user-info">
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-check-circle" style="font-size: 4rem; color: var(--success-color); margin-bottom: 20px;"></i>
+                    <h2 style="color: var(--success-color); margin-bottom: 20px;">Pagamento Processado com Sucesso!</h2>
+                    <p style="font-size: 1.2rem; margin-bottom: 15px;">Seu pagamento foi confirmado e sua inscrição está ativa.</p>
+                    <p style="font-size: 1.2rem; margin-bottom: 15px;">Aguarde a liberação das oficinas para você se inscrever em quantas quiser e puder.</p>
+                    <p style="font-size: 1.2rem;">Agradecemos sua participação na <strong>1ª TechWeek</strong>!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+<?php else: ?>
+    <!-- Valor da Inscrição Section -->
             <section id="valor-inscricao" style="margin-top: 20px;">
                 <h2 style="color: var(--neon-green); margin-bottom: 20px; font-size: 1.8rem;">VALOR DA INSCRIÇÃO</h2>
                 
@@ -1719,6 +1747,10 @@ $comprovantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php endif; ?>
                 </div>
             </section>
+<?php endif; ?>
+
+
+            
             
              <!-- Atividades Section -->
             <section id="atividades" style="margin-top: 40px;">
