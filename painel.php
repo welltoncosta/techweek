@@ -1524,23 +1524,23 @@ foreach ($comprovantes as $comp) {
             </section>
             
 
-<?php if ($comprovante_aprovado): ?>
-    <!-- Mensagem de pagamento processado -->
-    <section id="pagamento-aprovado" style="margin-top: 40px;">
-        <div class="container">
-            <div class="user-info">
-                <div style="text-align: center; padding: 40px;">
-                    <i class="fas fa-check-circle" style="font-size: 4rem; color: var(--success-color); margin-bottom: 20px;"></i>
-                    <h2 style="color: var(--success-color); margin-bottom: 20px;">Pagamento Processado com Sucesso!</h2>
-                    <p style="font-size: 1.2rem; margin-bottom: 15px;">Seu pagamento foi confirmado e sua inscrição está ativa.</p>
-                    <p style="font-size: 1.2rem; margin-bottom: 15px;">Aguarde a liberação das oficinas para você se inscrever em quantas quiser e puder.</p>
-                    <p style="font-size: 1.2rem;">Agradecemos sua participação na <strong>1ª TechWeek</strong>!</p>
+        <?php if ($comprovante_aprovado): ?>
+            <!-- Mensagem de pagamento processado -->
+            <section id="pagamento-aprovado" style="margin-top: 40px;">
+                <div class="container">
+                    <div class="user-info">
+                        <div style="text-align: center; padding: 40px;">
+                            <i class="fas fa-check-circle" style="font-size: 4rem; color: var(--success-color); margin-bottom: 20px;"></i>
+                            <h2 style="color: var(--success-color); margin-bottom: 20px;">Pagamento Processado com Sucesso!</h2>
+                            <p style="font-size: 1.2rem; margin-bottom: 15px;">Seu pagamento foi confirmado e sua inscrição está ativa.</p>
+                            <p style="font-size: 1.2rem; margin-bottom: 15px;">Aguarde a liberação das oficinas para você se inscrever em quantas quiser e puder.</p>
+                            <p style="font-size: 1.2rem;">Agradecemos sua participação na <strong>1ª TechWeek</strong>!</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </section>
-<?php else: ?>
-    <!-- Valor da Inscrição Section -->
+            </section>
+        <?php else: ?>
+        <!-- Valor da Inscrição Section -->
             <section id="valor-inscricao" style="margin-top: 20px;">
                 <h2 style="color: var(--neon-green); margin-bottom: 20px; font-size: 1.8rem;">VALOR DA INSCRIÇÃO</h2>
                 
@@ -2266,6 +2266,8 @@ function atualizarConflitos() {
         
         // Chamar a função para verificar conflitos inicialmente
         atualizarConflitos();
+        atualizarMinhasInscricoes();
+
         
         // Inscrição em atividades via AJAX
         document.querySelectorAll('.btn-inscrever-atividade').forEach(button => {
@@ -2346,7 +2348,7 @@ function atualizarConflitos() {
                         
                         // Atualizar conflitos
                         atualizarConflitos();
-                        
+                        atualizarMinhasInscricoes();
                         // Atualizar a aba "Minhas Inscrições"
                         setTimeout(() => {
                             document.querySelector('[data-tab="minhas"]').click();
@@ -2392,13 +2394,14 @@ function atualizarConflitos() {
                     // Atualizar a interface
                     atualizarInterfaceAtividade(atividadeId, false);
                     atualizarConflitos();
-                
+                                    atualizarMinhasInscricoes();
+
                     // Atualizar a aba "Minhas Inscrições"
                     setTimeout(() => {
                         document.querySelector('[data-tab="minhas"]').click();
                     }, 1000);
 
-                    atualizarMinhasInscricoes();
+                    //atualizarMinhasInscricoes();
                 } else {
                     messageAtividade.innerHTML = `<div class="message erro">${data.message}</div>`;
                 }
@@ -2417,38 +2420,151 @@ function atualizarConflitos() {
             button.addEventListener('click', cancelarInscricaoHandler);
         });
 
-        function atualizarInterfaceAtividade(atividadeId, inscrito) {
-            const atividadeElement = document.getElementById(`atividade-${atividadeId}`);
-            if (!atividadeElement) return;
+        
+function atualizarInterfaceAtividade(atividadeId, inscrito) {
+    const atividadeElement = document.getElementById(`atividade-${atividadeId}`);
+    if (!atividadeElement) return;
+    
+    const actionsDiv = atividadeElement.querySelector('.atividade-actions');
+    const vagasElement = atividadeElement.querySelector('.atividade-vagas');
+    
+    // Limpar todos os botões existentes
+    actionsDiv.innerHTML = '';
+    
+    if (inscrito) {
+        // Criar apenas o botão de cancelar
+        const btnCancelar = document.createElement('button');
+        btnCancelar.className = 'btn-primary btn-cancelar-atividade';
+        btnCancelar.setAttribute('data-atividade-id', atividadeId);
+        btnCancelar.style.background = 'linear-gradient(45deg, var(--error-color), #ff6b6b)';
+        btnCancelar.innerHTML = '<i class="fas fa-times"></i> Cancelar Inscrição';
+        
+        // Adicionar evento de cancelamento
+        btnCancelar.addEventListener('click', cancelarInscricaoHandler);
+        
+        actionsDiv.appendChild(btnCancelar);
+    } else {
+        // Criar apenas o botão de inscrever
+        const btnInscrever = document.createElement('button');
+        btnInscrever.className = 'btn-primary btn-inscrever-atividade';
+        btnInscrever.setAttribute('data-atividade-id', atividadeId);
+        btnInscrever.innerHTML = '<i class="fas fa-plus"></i> Inscrever-se';
+        
+        // Adicionar event listener para o novo botão
+        btnInscrever.addEventListener('click', function() {
+            if (this.disabled) return;
             
-            const btnInscrever = atividadeElement.querySelector('.btn-inscrever-atividade');
-            const btnCancelar = atividadeElement.querySelector('.btn-cancelar-atividade');
-            const vagasElement = atividadeElement.querySelector('.atividade-vagas');
+            const atividadeElement = this.closest('.atividade-card');
+            const atividadeId = this.getAttribute('data-atividade-id');
+            const messageAtividade = document.getElementById('messageAtividade');
             
-            if (inscrito) {
-                // Atualizar para estado de inscrito
-                if (btnInscrever) btnInscrever.style.display = 'none';
-                if (btnCancelar) btnCancelar.style.display = 'block';
-            } else {
-                // Atualizar para estado não inscrito
-                if (btnInscrever) btnInscrever.style.display = 'block';
-                if (btnCancelar) btnCancelar.style.display = 'none';
-                
-                // Atualizar contador de vagas
-                if (vagasElement) {
-                    const vagasText = vagasElement.textContent;
-                    if (vagasText === 'Esgotada') {
-                        vagasElement.textContent = '1 vaga restante';
-                    } else {
+            // Obter dados da nova atividade
+            const novaAtividade = {
+                id: atividadeElement.dataset.id,
+                data: atividadeElement.dataset.data,
+                hora_inicio: atividadeElement.dataset.horaInicio,
+                hora_fim: atividadeElement.dataset.horaFim,
+                titulo: atividadeElement.querySelector('.atividade-title').textContent.trim()
+            };
+            
+            // Verificar conflito
+            const conflito = temConflito(novaAtividade, atividadesInscritas);
+            if (conflito) {
+                messageAtividade.innerHTML = `<div class="message erro">Conflito de horário com a atividade: ${conflito.titulo} (${conflito.hora_inicio.slice(0,5)} - ${conflito.hora_fim.slice(0,5)}).</div>`;
+                // Esconder a mensagem após 5 segundos
+                setTimeout(() => {
+                    messageAtividade.innerHTML = '';
+                }, 5000);
+                return;
+            }
+            
+            fetch('atividades_handler.php?action=inscrever', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `atividade_id=${atividadeId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    messageAtividade.innerHTML = `<div class="message sucesso">${data.message}</div>`;
+                    
+                    // Adicionar a nova atividade ao array de atividadesInscritas
+                    atividadesInscritas.push({
+                        id: novaAtividade.id,
+                        data: novaAtividade.data,
+                        hora_inicio: novaAtividade.hora_inicio,
+                        hora_fim: novaAtividade.hora_fim,
+                        titulo: novaAtividade.titulo
+                    });
+                    
+                    // Atualizar a interface para mostrar o botão de cancelar
+                    atualizarInterfaceAtividade(atividadeId, true);
+                    
+                    // Atualizar a contagem de vagas
+                    if (vagasElement) {
+                        const vagasText = vagasElement.textContent;
                         const match = vagasText.match(/(\d+)/);
                         if (match) {
                             const vagas = parseInt(match[1]);
-                            vagasElement.textContent = (vagas + 1) + ' vagas restantes';
+                            if (vagas > 1) {
+                                vagasElement.textContent = (vagas - 1) + ' vagas restantes';
+                            } else {
+                                vagasElement.textContent = 'Esgotada';
+                                // Desabilitar outros botões de inscrição para esta atividade
+                                document.querySelectorAll(`.btn-inscrever-atividade[data-atividade-id="${atividadeId}"]`).forEach(btn => {
+                                    btn.classList.add('btn-disabled');
+                                    btn.disabled = true;
+                                });
+                            }
                         }
                     }
+                    
+                    // Atualizar conflitos
+
+                    atualizarConflitos();
+                    
+                    // Atualizar a aba "Minhas Inscrições"
+                    setTimeout(() => {
+                        document.querySelector('[data-tab="minhas"]').click();
+                    }, 1500);
+                } else {
+                    messageAtividade.innerHTML = `<div class="message erro">${data.message}</div>`;
+                }
+                
+                // Esconder a mensagem após 5 segundos
+                setTimeout(() => {
+                    messageAtividade.innerHTML = '';
+                }, 5000);
+            })
+            .catch(error => {
+                messageAtividade.innerHTML = `<div class="message erro">Erro: ${error}</div>`;
+            });
+        });
+        
+        actionsDiv.appendChild(btnInscrever);
+
+        // Atualizar contador de vagas
+        if (vagasElement) {
+            const vagasText = vagasElement.textContent;
+            if (vagasText === 'Esgotada') {
+                vagasElement.textContent = '1 vaga restante';
+            } else {
+                const match = vagasText.match(/(\d+)/);
+                if (match) {
+                    const vagas = parseInt(match[1]);
+                    vagasElement.textContent = (vagas + 1) + ' vagas restantes';
                 }
             }
         }
+    }
+    
+    // Atualizar conflitos de horário
+    atualizarConflitos();
+}
+
+
 
         // Adicione esta função para atualizar a aba de minhas inscrições
         function atualizarMinhasInscricoes() {

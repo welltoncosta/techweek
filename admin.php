@@ -60,7 +60,7 @@ try {
     $comprovantes_pendentes = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
     
     // Participantes por tipo
-    $stmt = $pdo->prepare("SELECT tipo_inscricao, COUNT(*) as quantidade FROM participantes GROUP BY tipo_inscricao");
+    $stmt = $pdo->prepare("SELECT tipo, COUNT(*) as quantidade FROM participantes GROUP BY tipo");
     $stmt->execute();
     $participantes_por_tipo = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -1441,15 +1441,7 @@ function obterTipoInscricao($tipo) {
                             <li><a href="#presencas" class="admin-nav" data-section="presencas">Presenças</a></li>
                             <li><a href="#comprovantes" class="admin-nav" data-section="comprovantes">Comprovantes</a></li>
                             <li><a href="#contabilidade" class="admin-nav" data-section="contabilidade">Contabilidade</a></li>
-                        </ul>
-
-                        <!-- Botão para sincronizar comprovantes -->
-            <div style="margin: 20px 0;">
-                <button class="btn-primary" onclick="sincronizarComprovantes()">Sincronizar Comprovantes Antigos</button>
-                <p style="color: var(--light-gray); font-size: 0.9rem; margin-top: 8px;">
-                    Este botão cria transações para comprovantes aprovados que ainda não foram registrados na contabilidade.
-                </p>
-            </div>
+                        </ul>              
                     </div>
                     
                     <div class="admin-content">
@@ -2260,7 +2252,6 @@ function obterTipoInscricao($tipo) {
                 </div>
             </div>
         </section>
-        
     </div>
                     
                     
