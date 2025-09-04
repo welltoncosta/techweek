@@ -1941,7 +1941,6 @@ text-align: justify;
         // Envio do formulário de recuperação de senha
         document.getElementById('enviar-recuperacao').addEventListener('click', async function() {
             const email = document.getElementById('recovery-email').value;
-            const action = document.getElementById('recovery-action').value;
             
             if (!email) {
                 messageContainer.innerHTML = `<div class="alert alert-error">Por favor, informe seu email.</div>`;
@@ -1955,16 +1954,15 @@ text-align: justify;
                 return;
             }
             
-            
             // envio do formulário
             const formData = {
                 email: email,
-                action: action
+                action: 'recuperar_senha'
             };
             
             try {
                 // Enviar solicitação de recuperação de senha
-                const response = await fetch('https://salin.fb.utfpr.edu.br/2024/mail/mail.php', {
+                const response = await fetch('login.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
