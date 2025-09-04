@@ -593,6 +593,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Dentro do if ($_SERVER['REQUEST_METHOD'] === 'POST')
+    if (isset($_POST['action']) && $_POST['action'] === 'excluir_comprovante') {
+        try {
+
+            if (isset($_POST['id'])) {
+                $id = $_POST['id'];
+                // Verificar se o comprovante existe e está aprovado
+                $stmt = $pdo->prepare("SELECT status FROM comprovantes WHERE id = ?");
+                $stmt->execute([$id]);
+                $comprovante = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($comprovante && $comprovante['status'] == 'aprovado') {
+                    // Atualizar para excluído
+                    $stmt = $pdo->prepare("UPDATE comprovantes SET status = 'excluido' WHERE id = ?");
+                    if ($stmt->execute([$id])) {
+                        $response = ['success' => true, 'message' => 'Comprovante excluído com sucesso'];
+                    } else {
+                        $response = ['success' => false, 'message' => 'Erro ao atualizar comprovante'];
+                    }
+                } else {
+                    $response = ['success' => false, 'message' => 'Comprovante não encontrado ou não está aprovado'];
+                }
+            } else {
+                $response = ['success' => false, 'message' => 'ID não fornecido'];
+            }
+        
+        } catch (PDOException $e) {
+            $response['message'] = 'Erro ao sincronizar comprovantes: ' . $e->getMessage();
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    }
+
     // Se for uma requisição AJAX, retornar JSON
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
         header('Content-Type: application/json');
@@ -600,6 +635,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
+
+
+
 
 // Gerar token CSRF
 if (empty($_SESSION['csrf_token'])) {
