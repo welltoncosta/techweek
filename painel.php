@@ -2032,135 +2032,138 @@ foreach ($comprovantes as $comp) {
         const formComprovante = document.getElementById('formComprovante');
         const messageComprovante = document.getElementById('messageComprovante');
         
-        fileUploadArea.addEventListener('click', () => {
-            fileInput.click();
-        });
         
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                fileName.textContent = fileInput.files[0].name;
-            } else {
-                fileName.textContent = '';
-            }
-        });
-        
-        // Arrastar e soltar arquivo
-        fileUploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileUploadArea.style.borderColor = 'var(--neon-green)';
-            fileUploadArea.style.backgroundColor = 'rgba(0, 191, 99, 0.1)';
-        });
-        
-        fileUploadArea.addEventListener('dragleave', () => {
-            fileUploadArea.style.borderColor = 'var(--border-color)';
-            fileUploadArea.style.backgroundColor = 'transparent';
-        });
-        
-        fileUploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            fileUploadArea.style.borderColor = 'var(--border-color)';
-            fileUploadArea.style.backgroundColor = 'transparent';
-            
-            if (e.dataTransfer.files.length > 0) {
-                fileInput.files = e.dataTransfer.files;
-                fileName.textContent = e.dataTransfer.files[0].name;
-            }
-        });
-        
-        // Envio do formulário via AJAX
-        formComprovante.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            
-            fetch('upload_comprovante.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    messageComprovante.innerHTML = `<div class="message sucesso">${data.message}</div>`;
-                    
-                    // Adicionar o novo comprovante à lista
-                    const comprovantesList = document.getElementById('comprovantesList');
-                    const comprovanteItem = document.createElement('div');
-                    comprovanteItem.className = 'comprovante-item';
-                    comprovanteItem.innerHTML = `
-                        <div class="comprovante-info">
-                            <h4>Comprovante enviado em ${new Date().toLocaleString('pt-BR')}</h4>
-                            <div class="verification-status">
-                                <span class="status-icon">
-                                    <i class="fas fa-clock" style="color: #ffc107;"></i>
-                                </span>
-                                <span>
-                                    Status: <span style="color: #ffc107;">Pendente</span>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="comprovante-actions">
-                            <button class="btn-primary btn-view-comprovante" data-file="${data.file_path}" data-type="${data.file_type}">
-                                <i class="fas fa-eye"></i> Visualizar
-                            </button>
-                        </div>
-                    `;
-                    
-                    // Adicionar evento de visualização ao novo botão
-                    comprovanteItem.querySelector('.btn-view-comprovante').addEventListener('click', viewComprovanteHandler);
-                    
-                    // Adicionar à lista
-                    if (comprovantesList.querySelector('.message')) {
-                        comprovantesList.innerHTML = '';
-                    }
-                    comprovantesList.prepend(comprovanteItem);
-                    
-                    // Limpar o formulário
-                    formComprovante.reset();
-                    fileName.textContent = '';
-                } else {
-                    messageComprovante.innerHTML = `<div class="message erro">${data.message}</div>`;
-                }
-            })
-            .catch(error => {
-                messageComprovante.innerHTML = `<div class="message erro">Erro ao enviar comprovante: ${error}</div>`;
+        if (fileUploadArea) {
+            fileUploadArea.addEventListener('click', () => {
+                fileInput.click();
             });
-        });
-        
-        // Visualizar comprovante
-        const previewModal = document.getElementById('previewModal');
-        const previewClose = document.getElementById('previewClose');
-        const previewBody = document.getElementById('previewBody');
-        
-        const viewComprovanteHandler = function() {
-            const file = this.getAttribute('data-file');
-            const type = this.getAttribute('data-type');
             
-            previewBody.innerHTML = '';
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) {
+                    fileName.textContent = fileInput.files[0].name;
+                } else {
+                    fileName.textContent = '';
+                }
+            });
             
-            if (type === 'pdf') {
-                previewBody.innerHTML = `<iframe src="${file}"></iframe>`;
-            } else {
-                previewBody.innerHTML = `<img src="${file}" alt="Comprovante">`;
-            }
+            // Arrastar e soltar arquivo
+            fileUploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUploadArea.style.borderColor = 'var(--neon-green)';
+                fileUploadArea.style.backgroundColor = 'rgba(0, 191, 99, 0.1)';
+            });
             
-            previewModal.style.display = 'flex';
-        };
-        
-        // Adicionar evento a todos os botões de visualização
-        document.querySelectorAll('.btn-view-comprovante').forEach(button => {
-            button.addEventListener('click', viewComprovanteHandler);
-        });
-        
-        previewClose.addEventListener('click', () => {
-            previewModal.style.display = 'none';
-        });
-        
-        previewModal.addEventListener('click', (e) => {
-            if (e.target === previewModal) {
+            fileUploadArea.addEventListener('dragleave', () => {
+                fileUploadArea.style.borderColor = 'var(--border-color)';
+                fileUploadArea.style.backgroundColor = 'transparent';
+            });
+            
+            fileUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUploadArea.style.borderColor = 'var(--border-color)';
+                fileUploadArea.style.backgroundColor = 'transparent';
+                
+                if (e.dataTransfer.files.length > 0) {
+                    fileInput.files = e.dataTransfer.files;
+                    fileName.textContent = e.dataTransfer.files[0].name;
+                }
+            });
+            
+            // Envio do formulário via AJAX
+            formComprovante.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                
+                fetch('upload_comprovante.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        messageComprovante.innerHTML = `<div class="message sucesso">${data.message}</div>`;
+                        
+                        // Adicionar o novo comprovante à lista
+                        const comprovantesList = document.getElementById('comprovantesList');
+                        const comprovanteItem = document.createElement('div');
+                        comprovanteItem.className = 'comprovante-item';
+                        comprovanteItem.innerHTML = `
+                            <div class="comprovante-info">
+                                <h4>Comprovante enviado em ${new Date().toLocaleString('pt-BR')}</h4>
+                                <div class="verification-status">
+                                    <span class="status-icon">
+                                        <i class="fas fa-clock" style="color: #ffc107;"></i>
+                                    </span>
+                                    <span>
+                                        Status: <span style="color: #ffc107;">Pendente</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="comprovante-actions">
+                                <button class="btn-primary btn-view-comprovante" data-file="${data.file_path}" data-type="${data.file_type}">
+                                    <i class="fas fa-eye"></i> Visualizar
+                                </button>
+                            </div>
+                        `;
+                        
+                        // Adicionar evento de visualização ao novo botão
+                        comprovanteItem.querySelector('.btn-view-comprovante').addEventListener('click', viewComprovanteHandler);
+                        
+                        // Adicionar à lista
+                        if (comprovantesList.querySelector('.message')) {
+                            comprovantesList.innerHTML = '';
+                        }
+                        comprovantesList.prepend(comprovanteItem);
+                        
+                        // Limpar o formulário
+                        formComprovante.reset();
+                        fileName.textContent = '';
+                    } else {
+                        messageComprovante.innerHTML = `<div class="message erro">${data.message}</div>`;
+                    }
+                })
+                .catch(error => {
+                    messageComprovante.innerHTML = `<div class="message erro">Erro ao enviar comprovante: ${error}</div>`;
+                });
+            });
+            
+            // Visualizar comprovante
+            const previewModal = document.getElementById('previewModal');
+            const previewClose = document.getElementById('previewClose');
+            const previewBody = document.getElementById('previewBody');
+            
+            const viewComprovanteHandler = function() {
+                const file = this.getAttribute('data-file');
+                const type = this.getAttribute('data-type');
+                
+                previewBody.innerHTML = '';
+                
+                if (type === 'pdf') {
+                    previewBody.innerHTML = `<iframe src="${file}"></iframe>`;
+                } else {
+                    previewBody.innerHTML = `<img src="${file}" alt="Comprovante">`;
+                }
+                
+                previewModal.style.display = 'flex';
+            };
+            
+            // Adicionar evento a todos os botões de visualização
+            document.querySelectorAll('.btn-view-comprovante').forEach(button => {
+                button.addEventListener('click', viewComprovanteHandler);
+            });
+            
+            previewClose.addEventListener('click', () => {
                 previewModal.style.display = 'none';
-            }
-        });
-        
+            });
+            
+            previewModal.addEventListener('click', (e) => {
+                if (e.target === previewModal) {
+                    previewModal.style.display = 'none';
+                }
+            });
+        }
+
         // Tabs de atividades
         const tabs = document.querySelectorAll('.tab');
         const tabContents = document.querySelectorAll('.tab-content');
