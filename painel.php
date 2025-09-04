@@ -1712,6 +1712,8 @@ foreach ($comprovantes as $comp) {
                                     <span class="status-icon">
                                         <?php if ($comprovante['status'] == 'aprovado'): ?>
                                             <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+                                        <?php elseif ($comprovante['status'] == 'excluido'): ?>
+                                            <i class="fas fa-times-circle" style="color: var(--error-color);"></i>
                                         <?php elseif ($comprovante['status'] == 'rejeitado'): ?>
                                             <i class="fas fa-times-circle" style="color: var(--error-color);"></i>
                                         <?php else: ?>
@@ -1722,6 +1724,8 @@ foreach ($comprovantes as $comp) {
                                         Status: 
                                         <?php if ($comprovante['status'] == 'aprovado'): ?>
                                             <span class="verde">Aprovado</span>
+                                        <?php elseif ($comprovante['status'] == 'excluido'): ?>
+                                            <span class="vermelho">Excluído</span>
                                         <?php elseif ($comprovante['status'] == 'rejeitado'): ?>
                                             <span class="vermelho">Rejeitado</span>
                                             <?php if (!empty($comprovante['observacao'])): ?>

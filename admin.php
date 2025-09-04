@@ -845,6 +845,9 @@ function obterTipoInscricao($tipo) {
                     .status-rejected {
                         color: var(--error-color);
                     }
+                    .status-excluded {
+                        color: #888; /* cinza */
+                    }
                     
                     /* Modal Styles */
                     .modal {
@@ -2005,6 +2008,8 @@ function obterTipoInscricao($tipo) {
                                         <span class="status-approved">Aprovado</span>
                                     <?php elseif ($comprovante['status'] == 'rejeitado'): ?>
                                         <span class="status-rejected">Rejeitado</span>
+                                    <?php elseif ($comprovante['status'] == 'excluido'): ?>
+                                        <span class="status-excluded">Excluído</span>
                                     <?php else: ?>
                                         <span class="status-pending">Pendente</span>
                                     <?php endif; ?>
@@ -2016,6 +2021,8 @@ function obterTipoInscricao($tipo) {
                                     <?php if ($comprovante['status'] == 'pendente'): ?>
                                         <button class="btn-primary btn-small" onclick="validarPagamento(<?php echo $comprovante['id']; ?>, true)">Aprovar</button>
                                         <button class="btn-primary btn-small" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" onclick="validarPagamento(<?php echo $comprovante['id']; ?>, false)">Rejeitar</button>
+                                    <?php elseif ($comprovante['status'] == 'aprovado'): ?>
+                                        <button class="btn-primary btn-small" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" onclick="excluirComprovante(<?php echo $comprovante['id']; ?>)">Excluir</button>
                                     <?php else: ?>
                                         <span>Processado</span>
                                     <?php endif; ?>
@@ -2999,10 +3006,13 @@ function obterTipoInscricao($tipo) {
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
+                                
                                 // Atualizar a linha da tabela sem recarregar
                                 const linha = document.querySelector(`tr:has(button[onclick="validarPagamento(${id}, ${aprovado})"])`);
-                                linha.cells[2].innerHTML = aprovado ? '<span class="status-approved">Aprovado</span>' : '<span class="status-rejected">Rejeitado</span>';
-                                linha.cells[4].innerHTML = '<span>Processado</span>';
+                                
+                                linha.cells[3].innerHTML = aprovado ? '<span class="status-approved">Aprovado</span>' : '<span class="status-rejected">Rejeitado</span>';
+                                
+                                linha.cells[5].innerHTML = '<span>Processado</span>';
                                 
                                 exibirMensagem('Validação atualizada com sucesso!', 'sucesso');
                                 
@@ -3662,6 +3672,39 @@ function obterTipoInscricao($tipo) {
                     exibirMensagem('Erro ao salvar preço.', 'erro');
                 });
             });
+
+            // Função para excluir comprovante
+function excluirComprovante(id) {
+    if (!confirm('Tem certeza que deseja excluir este comprovante? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'excluir_comprovante');
+    formData.append('id', id);
+    formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
+    
+    fetch('painel_admin.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            exibirMensagem('Comprovante excluído com sucesso!', 'sucesso');
+            // Recarregar a página para atualizar a lista
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            exibirMensagem('Erro: ' + data.message, 'erro');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        exibirMensagem('Erro ao excluir comprovante.', 'erro');
+    });
+}
     </script>
 </body>
 </html>
