@@ -2022,7 +2022,9 @@ function obterTipoInscricao($tipo) {
                                         <button class="btn-primary btn-small" onclick="validarPagamento(<?php echo $comprovante['id']; ?>, true)">Aprovar</button>
                                         <button class="btn-primary btn-small" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" onclick="validarPagamento(<?php echo $comprovante['id']; ?>, false)">Rejeitar</button>
                                     <?php elseif ($comprovante['status'] == 'aprovado'): ?>
-                                        <button class="btn-primary btn-small" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" onclick="excluirComprovante(<?php echo $comprovante['id']; ?>)">Excluir</button>
+                                        <button class="btn-primary btn-small" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);"  onclick="alert('Desabilitado temporariamente!!!')">Excluir</button>
+                                        
+                                        <!-- onclick="excluirComprovante(<?php echo $comprovante['id']; ?>) -->
                                     <?php else: ?>
                                         <span>Processado</span>
                                     <?php endif; ?>

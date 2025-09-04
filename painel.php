@@ -6,6 +6,12 @@ if(!isset($_SESSION['usuario']) || empty($_SESSION['usuario'])) {
     exit;
 }
 
+// Verificar se o acesso veio do auto_login.php (recuperação de senha)
+$acesso_recuperacao = isset($_SESSION['acesso_recuperacao']) ? $_SESSION['acesso_recuperacao'] : false;
+
+// Remover a flag após uso para não afetar navegações futuras
+unset($_SESSION['acesso_recuperacao']);
+
 include("conexao.php");
 
 // Recuperar dados do usuário
@@ -1493,15 +1499,35 @@ foreach ($comprovantes as $comp) {
                             <input type="text" id="edit_instituicao" name="instituicao" value="<?php echo htmlspecialchars($usuario['instituicao']); ?>" required>
                         </div>
                         
+                        <?php if (!$acesso_recuperacao): ?>
                         <button type="button" class="toggle-password" id="togglePassword">
                             <i class="fas fa-key"></i> Alterar senha
                         </button>
+                        <?php else: ?>
+                        <h4 style="color: var(--neon-green); margin: 20px 0 10px;">Alterar Senha</h4>
+                        <p style="color: var(--light-gray); margin-bottom: 15px;">Como você acessou via recuperação de senha, defina uma nova senha abaixo:</p>
                         
-                        <div class="password-fields" id="passwordFields">
+                        <div class="password-fields" id="passwordFields" style="<?php echo $acesso_recuperacao ? 'display: block;' : ''; ?>">
+                            
+                            <div class="form-group">
+                                <label for="edit_nova_senha" class="required-field">Nova Senha</label>
+                                <input type="password" id="edit_nova_senha" name="nova_senha">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="edit_confirmar_senha" class="required-field">Confirmar Nova Senha</label>
+                                <input type="password" id="edit_confirmar_senha" name="confirmar_senha">
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <div class="password-fields" id="passwordFields" style="<?php echo $acesso_recuperacao ? 'display: block;' : ''; ?>">
+                            <?php if (!$acesso_recuperacao): ?>
                             <div class="form-group">
                                 <label for="edit_senha_atual" class="required-field">Senha Atual</label>
                                 <input type="password" id="edit_senha_atual" name="senha_atual">
                             </div>
+                            <?php endif; ?>
                             
                             <div class="form-group">
                                 <label for="edit_nova_senha" class="required-field">Nova Senha</label>

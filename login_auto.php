@@ -12,7 +12,7 @@ $token = $_GET['token'];
 
 try {
     // Buscar usuário pelo token válido
-    $stmt = $pdo->prepare("SELECT id, administrador, tipo_inscricao, lote_inscricao, nome, cpf, email, telefone, instituicao, data_cadastro FROM participantes WHERE token_recuperacao = :token AND expiracao_token > NOW()");
+    $stmt = $pdo->prepare("SELECT id, administrador, tipo_inscricao, lote_inscricao, nome, cpf, email, telefone, instituicao, data_cadastro FROM participantes WHERE token_recuperacao = :token AND expiracao_token < NOW()");
     $stmt->bindParam(':token', $token, PDO::PARAM_STR);
     $stmt->execute();
     
@@ -21,6 +21,7 @@ try {
         
         // Iniciar sessão
         $_SESSION['usuario'] = $usuario;
+        $_SESSION['acesso_recuperacao'] = true;
         $_SESSION['usuario_id'] = $usuario['id'];
         $_SESSION['usuario_tipo_inscricao'] = $usuario['tipo_inscricao'];
         $_SESSION['usuario_lote_inscricao'] = $usuario['lote_inscricao'];

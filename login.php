@@ -150,14 +150,13 @@ function processarRecuperacaoSenha($data, $pdo) {
             // Preparar dados para o email
             $mailData = [
                 'email' => $email,
-                'assunto' => 'Recuperação de Senha - TechWeek',
+                'assunto' => 'Recuperação de acesso - TechWeek Francisco Beltrão 2025',
                 'mensagem' => gerarMensagemRecuperacao($usuario['nome'], $token)
             ];
             
             // Chamar o script de email
             $url = 'https://techweek.typexsistemas.com.br/mail/mail.php';
 
-            echo $url;
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
@@ -184,15 +183,30 @@ function processarRecuperacaoSenha($data, $pdo) {
 
 // Gerar mensagem de recuperação de senha
 function gerarMensagemRecuperacao($nome, $token) {
+    
     $link = 'https://techweek.typexsistemas.com.br/login_auto.php?token=' . $token;
     
     $mensagem = "Prezado(a) $nome,<br><br>";
-    $mensagem .= "Recebemos uma solicitação de recuperação de senha para sua conta na TechWeek.<br><br>";
-    $mensagem .= "Clique no link abaixo para acessar automaticamente sua conta e redefinir sua senha:<br>";
+
+    $mensagem .= "Foi identificada uma solicitação de recuperação de credenciais de acesso em nosso sistema da TechWeek Francisco Beltrão 2025. Por questões de segurança, contactamos você para confirmar a legitimidade desta requisição.<br><br>";
+
+    $mensagem .= "Para acessar sua conta novamente (para depois você redefinir sua senha em seu painel), solicitamos que acesse o link exclusivo abaixo dentro das próximas 24 horas:<br><br>";
+
+    $mensagem .= "🔗 Link de Redefinição:<br>";
+    
     $mensagem .= "<a href='$link'>$link</a><br><br>";
-    $mensagem .= "Este link expirará em 1 hora.<br><br>";
-    $mensagem .= "Se você não solicitou esta recuperação, ignore este email.<br><br>";
-    $mensagem .= "Atenciosamente,<br>Equipe TechWeek";
+
+    $mensagem .= "Nota: Este link é de uso único e exclusivo para seu endereço de email. Caso não tenha solicitado esta alteração, recomendamos desconsiderar esta mensagem e verificar as configurações de segurança de sua conta.<br><br>";
+
+    $mensagem .= "Atenciosamente,";
+
+    $mensagem .= "Comissão Organizadora<br>";
+    $mensagem .= "TechWeek Francisco Beltrão 2025<br>";
+    $mensagem .= "📧 techweek-fb@utfpr.edu.br<br>";
+    $mensagem .= "🌐 https://techweek.typexsistemas.com.br<br><br>";
+
+    $mensagem .= "Mensagem automática - favor não responder diretamente a este email";
+    
     
     return $mensagem;
 }

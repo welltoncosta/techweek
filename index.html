@@ -25,6 +25,32 @@
             --success-color: #00cc66;
         }
         
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .light-theme .spinner {
+            border: 3px solid rgba(0,0,0,.1);
+            border-top-color: var(--accent-color);
+        }
+
+        .btn-loading {
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
         .light-theme {
             --bg-color: #f8f9fa;
             --text-color: #2d3748;
@@ -1637,7 +1663,10 @@ text-align: justify;
                         <input type="email" id="recovery-email" name="email">
                     </div>
                     <input type="hidden" id="recovery-action" name="action" value="recuperar_senha">
-                    <button type="button" id="enviar-recuperacao">Enviar Link de Recuperação</button>
+                    <button type="button" id="enviar-recuperacao">
+                        <span class="spinner" id="recovery-spinner"></span>
+                        <span id="recovery-text">Enviar Link de Recuperação</span>
+                    </button>
                     <a href="#" id="voltar-login">Voltar para o login</a>
                 </div>
             </div>
@@ -1938,6 +1967,22 @@ text-align: justify;
             document.getElementById('login-form').style.display = 'block';
         });
 
+        function toggleRecoveryLoading(show) {
+            const spinner = document.getElementById('recovery-spinner');
+            const text = document.getElementById('recovery-text');
+            const button = document.getElementById('enviar-recuperacao');
+            
+            if (show) {
+                spinner.style.display = 'inline-block';
+                text.textContent = 'Processando...';
+                button.classList.add('btn-loading');
+            } else {
+                spinner.style.display = 'none';
+                text.textContent = 'Enviar Link de Recuperação';
+                button.classList.remove('btn-loading');
+            }
+        }
+
         // Envio do formulário de recuperação de senha
         document.getElementById('enviar-recuperacao').addEventListener('click', async function() {
             const email = document.getElementById('recovery-email').value;
@@ -1953,6 +1998,9 @@ text-align: justify;
                 messageContainer.innerHTML = `<div class="alert alert-error">Por favor, insira um email válido.</div>`;
                 return;
             }
+
+            // Mostrar spinner e alterar texto
+            toggleRecoveryLoading(true);
             
             // envio do formulário
             const formData = {
@@ -1980,6 +2028,9 @@ text-align: justify;
             } catch (error) {
                 console.error('Erro:', error);
                 messageContainer.innerHTML = `<div class="alert alert-error">Erro ao conectar com o servidor.</div>`;
+            } finally {
+                // Ocultar spinner independentemente do resultado
+                toggleRecoveryLoading(false);
             }
         });
         

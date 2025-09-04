@@ -4,8 +4,8 @@
 // Configurações de conexão com o banco de dados
 $host = 'localhost';
 $dbname = 'u686345830_techweek_utfpr';
-$username = 'usuario';
-$password = '123';
+$username = 'u686345830_tw_admin';
+$password = 'TechWeek@2025@';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
