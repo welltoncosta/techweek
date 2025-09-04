@@ -155,7 +155,7 @@ function processarRecuperacaoSenha($data, $pdo) {
             ];
             
             // Chamar o script de email
-            $url = 'https://wellton.com.br/techweek/mail/mail.php';
+            $url = 'https://techweek.typexsistemas.com.br/mail/mail.php';
 
             echo $url;
             $ch = curl_init($url);
@@ -184,7 +184,7 @@ function processarRecuperacaoSenha($data, $pdo) {
 
 // Gerar mensagem de recuperação de senha
 function gerarMensagemRecuperacao($nome, $token) {
-    $link = 'https://wellton.com.br/techweek/login_auto.php?token=' . $token;
+    $link = 'https://techweek.typexsistemas.com.br/login_auto.php?token=' . $token;
     
     $mensagem = "Prezado(a) $nome,<br><br>";
     $mensagem .= "Recebemos uma solicitação de recuperação de senha para sua conta na TechWeek.<br><br>";
