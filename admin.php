@@ -37,6 +37,8 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+
+
 // Buscar dados para o dashboard
 try {
     // Total de participantes
@@ -1444,6 +1446,8 @@ function obterTipoInscricao($tipo) {
                             <li><a href="#presencas" class="admin-nav" data-section="presencas">Presenças</a></li>
                             <li><a href="#comprovantes" class="admin-nav" data-section="comprovantes">Comprovantes</a></li>
                             <li><a href="#contabilidade" class="admin-nav" data-section="contabilidade">Contabilidade</a></li>
+                            <li><a href="#backup" class="admin-nav" data-section="backup">Backups</a></li>
+
                         </ul>              
                     </div>
                     
@@ -2261,6 +2265,89 @@ function obterTipoInscricao($tipo) {
                 </div>
             </div>
         </section>
+
+
+        <!-- Seção de Backup -->
+<section id="backup-section" class="admin-section">
+    <h2>Backup do Sistema</h2>
+    
+    <div class="dashboard-cards">
+        <div class="dashboard-card">
+            <i class="fas fa-database"></i>
+            <h3>Backup do Banco</h3>
+            <p>Cria um arquivo .sql com todos os dados</p>
+            <button class="btn-primary" onclick="criarBackup('database')">Criar Backup</button>
+        </div>
+        
+        <div class="dashboard-card">
+            <i class="fas fa-file-archive"></i>
+            <h3>Backup de Arquivos</h3>
+            <p>Compacta todos os arquivos em um .zip</p>
+            <button class="btn-primary" onclick="criarBackup('arquivos')">Criar Backup</button>
+        </div>
+        
+        <div class="dashboard-card">
+            <i class="fas fa-server"></i>
+            <h3>Backup Completo</h3>
+            <p>Backup completo do banco e arquivos</p>
+            <button class="btn-primary" onclick="criarBackup('completo')">Criar Backup</button>
+        </div>
+    </div>
+    
+    <h3>Histórico de Backups</h3>
+    <div class="table-container">
+        <div class="form-group">
+            <input type="text" id="busca-backups" placeholder="Buscar por nome ou tipo...">
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Nome do Arquivo</th>
+                    <th>Tipo</th>
+                    <th>Tamanho</th>
+                    <th>Data de Criação</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                // Buscar backups no banco de dados
+                try {
+                    $stmt = $pdo->prepare("SELECT * FROM backups ORDER BY data_criacao DESC");
+                    $stmt->execute();
+                    $backups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    foreach ($backups as $backup):
+                ?>
+                <tr>
+                    <td data-label="Nome"><?php echo htmlspecialchars($backup['nome_arquivo']); ?></td>
+                    <td data-label="Tipo">
+                        <?php 
+                        if ($backup['tipo'] == 'database') {
+                            echo '<span class="badge badge-participante">Banco de Dados</span>';
+                        } elseif ($backup['tipo'] == 'arquivos') {
+                            echo '<span class="badge badge-palestrante">Arquivos</span>';
+                        } else {
+                            echo '<span class="badge badge-organizacao">Completo</span>';
+                        }
+                        ?>
+                    </td>
+                    <td data-label="Tamanho"><?php echo htmlspecialchars($backup['tamanho']); ?></td>
+                    <td data-label="Data"><?php echo formatarDataHora($backup['data_criacao']); ?></td>
+                    <td data-label="Ações">
+                        <button class="btn-primary btn-small" onclick="downloadBackup(<?php echo $backup['id']; ?>)">Download</button>
+                        <button class="btn-primary btn-small" style="background: linear-gradient(45deg, var(--error-color), #ff6b6b);" onclick="excluirBackup(<?php echo $backup['id']; ?>)">Excluir</button>
+                    </td>
+                </tr>
+                <?php endforeach; } catch (PDOException $e) { ?>
+                <tr>
+                    <td colspan="5">Nenhum backup encontrado.</td>
+                </tr>
+                <?php } ?>
+            </tbody>
+        </table>
+    </div>
+</section>
     </div>
                     
                     
@@ -3707,6 +3794,93 @@ function excluirComprovante(id) {
         exibirMensagem('Erro ao excluir comprovante.', 'erro');
     });
 }
+
+// Função para criar backup
+function criarBackup(tipo) {
+    if (!confirm(`Deseja criar um backup ${tipo}?`)) {
+        return;
+    }
+    
+    // Mostrar indicador de carregamento
+    const mensagemDiv = document.getElementById('mensagem');
+    mensagemDiv.innerHTML = '<div class="message">Criando backup, aguarde...</div>';
+    
+    // Executar o backup via AJAX
+    const formData = new FormData();
+    formData.append('action', 'criar_backup');
+    formData.append('tipo', tipo);
+    formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
+    
+    fetch('painel_admin.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            exibirMensagem('Backup criado com sucesso!', 'sucesso');
+            // Recarregar a página para atualizar o histórico
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            exibirMensagem('Erro: ' + data.message, 'erro');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        exibirMensagem('Erro ao criar backup.', 'erro');
+    });
+}
+
+// Função para download de backup
+function downloadBackup(id) {
+    window.open(`download_backup.php?id=${id}`, '_blank');
+}
+
+// Função para excluir backup
+function excluirBackup(id) {
+    if (!confirm('Tem certeza que deseja excluir este backup?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'excluir_backup');
+    formData.append('id', id);
+    formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
+    
+    fetch('painel_admin.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            exibirMensagem('Backup excluído com sucesso!', 'sucesso');
+            // Recarregar a página para atualizar o histórico
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            exibirMensagem('Erro: ' + data.message, 'erro');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        exibirMensagem('Erro ao excluir backup.', 'erro');
+    });
+}
+
+// Adicionar busca em backups
+document.getElementById('busca-backups').addEventListener('input', function() {
+    const termo = this.value.toLowerCase();
+    const linhas = document.querySelectorAll('#backup-section .data-table tbody tr');
+    
+    linhas.forEach(linha => {
+        const textoLinha = linha.textContent.toLowerCase();
+        linha.style.display = textoLinha.includes(termo) ? '' : 'none';
+    });
+});
     </script>
 </body>
 </html>

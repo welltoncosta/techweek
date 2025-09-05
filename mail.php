@@ -4,8 +4,8 @@
 // Configurações de conexão com o banco de dados
 $host = 'localhost';
 $dbname = 'u686345830_techweek_utfpr';
-$username = 'u686345830_tw_admin';
-$password = 'TechWeek@2025@';
+$username = 'teste';
+$password = 'teste';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
@@ -107,8 +107,8 @@ function enviar_email($destinatario, $assunto, $mensagem) {
     $mail->SMTPSecure = 'ssl';    
     $mail->Port = 465;
     $mail->SMTPAuth = true;
-    $mail->Username = 'techweek-fb';
-    $mail->Password = 'SemanaAcademica@00';
+    $mail->Username = 'teste';
+    $mail->Password = 'teste';
     $mail->setFrom('techweek-fb@utfpr.edu.br', $remetente);
     
     $mail->addAddress($destinatario, '');

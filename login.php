@@ -67,17 +67,20 @@ function processarLogin($data, $pdo) {
     
     try {
         // Verificar se o login é email ou CPF
-        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
-            $campo = 'email';
-        } else {
-            // Remove caracteres não numéricos para CPF
+        $campo = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'cpf';
+        
+        // Se for CPF, remover formatação para buscar no banco
+        if ($campo === 'cpf') {
             $login = preg_replace('/[^0-9]/', '', $login);
-            if (validarCPF($login)) {
-                $campo = 'cpf';
-            } else {
+            
+            // Validar CPF
+            if (!validarCPF($login)) {
                 echo json_encode(['success' => false, 'message' => 'CPF inválido']);
                 return;
             }
+            
+            // Formatar CPF para o padrão do banco (000.000.000-00)
+            $login = substr($login, 0, 3) . '.' . substr($login, 3, 3) . '.' . substr($login, 6, 3) . '-' . substr($login, 9, 2);
         }
         
         // Buscar usuário
@@ -120,17 +123,35 @@ function processarLogin($data, $pdo) {
 
 // Processar recuperação de senha
 function processarRecuperacaoSenha($data, $pdo) {
-    $email = sanitizeInput($data['email']);
+    $login = sanitizeInput($data['login']);
     
-    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        echo json_encode(['success' => false, 'message' => 'Por favor, informe um email válido']);
+    if (empty($login)) {
+        echo json_encode(['success' => false, 'message' => 'Por favor, informe seu email ou CPF']);
         return;
     }
     
     try {
-        // Verificar se o email existe
-        $stmt = $pdo->prepare("SELECT id, nome FROM participantes WHERE email = :email");
-        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+        // Verificar se o login é email ou CPF
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            $campo = 'email';
+            $valorBusca = $login;
+        } else {
+            // Remove caracteres não numéricos para CPF
+            $cpfNumeros = preg_replace('/[^0-9]/', '', $login);
+            
+            if (!validarCPF($cpfNumeros)) {
+                echo json_encode(['success' => false, 'message' => 'CPF inválido']);
+                return;
+            }
+            
+            $campo = 'cpf';
+            // Formatar CPF para o padrão do banco (000.000.000-00)
+            $valorBusca = substr($cpfNumeros, 0, 3) . '.' . substr($cpfNumeros, 3, 3) . '.' . substr($cpfNumeros, 6, 3) . '-' . substr($cpfNumeros, 9, 2);
+        }
+        
+        // Buscar usuário
+        $stmt = $pdo->prepare("SELECT id, nome, email FROM participantes WHERE $campo = :login");
+        $stmt->bindParam(':login', $valorBusca, PDO::PARAM_STR);
         $stmt->execute();
         
         if ($stmt->rowCount() === 1) {
@@ -149,7 +170,7 @@ function processarRecuperacaoSenha($data, $pdo) {
             
             // Preparar dados para o email
             $mailData = [
-                'email' => $email,
+                'email' => $usuario['email'],
                 'assunto' => 'Recuperação de acesso - TechWeek Francisco Beltrão 2025',
                 'mensagem' => gerarMensagemRecuperacao($usuario['nome'], $token)
             ];
@@ -173,7 +194,7 @@ function processarRecuperacaoSenha($data, $pdo) {
                 echo json_encode(['success' => false, 'message' => 'Erro ao enviar email de recuperação.']);
             }
         } else {
-            echo json_encode(['success' => false, 'message' => 'Email não encontrado em nosso sistema']);
+            echo json_encode(['success' => false, 'message' => 'Email ou CPF não encontrado em nosso sistema']);
         }
     } catch (PDOException $e) {
         error_log("Erro na recuperação de senha: " . $e->getMessage());
@@ -196,7 +217,7 @@ function gerarMensagemRecuperacao($nome, $token) {
     
     $mensagem .= "<a href='$link'>$link</a><br><br>";
 
-    $mensagem .= "Nota: Este link é de uso único e exclusivo para seu endereço de email. Caso não tenha solicitado esta alteração, recomendamos desconsiderar esta mensagem e verificar as configurações de segurança de sua conta.<br><br>";
+    $mensagem .= "Nota: Este link é de uso único and exclusivo para seu endereço de email. Caso não tenha solicitado esta alteração, recomendamos desconsiderar esta mensagem and verificar as configurações de segurança de sua conta.<br><br>";
 
     $mensagem .= "Atenciosamente,";
 

@@ -910,6 +910,7 @@ text-align: justify;
         
         .footer-info {
             text-align: center;
+            position: relative;
         }
         
         .footer-info h3 {
@@ -1338,9 +1339,9 @@ text-align: justify;
             
             <div class="about-content">
                 <div class="about-text">
-                    <p>A 1ª TechWeek é um marco na história tecnológica da região. Este evento promete reunir as mentes mais brilhantes do setor para discutir inovações, tendências e desafios do mundo digital.</p>
-                    <p>Durante quatro dias intensos, participantes terão acesso a palestras de especialistas renomados, workshops práticos, competições de programação, oportunidades de networking e muito mais. O evento será realizado em diversos locais estratégicos, transformando a cidade em um polo de inovação.</p>
-                    <p>Temas como Inteligência Artificial, Desenvolvimento Web Moderno, Segurança Cibernética, Ciência de Dados e Empreendedorismo Tecnológico estarão no centro das discussões, proporcionando uma imersão completa no universo da tecnologia da informação.</p>
+                    <p>A 1ª TechWeek is a milestone in the technological history of the region. This event promises to bring together the brightest minds in the industry to discuss innovations, trends and challenges in the digital world.</p>
+                    <p>During four intense days, participants will have access to lectures by renowned experts, practical workshops, programming competitions, networking opportunities and much more. The event will be held in several strategic locations, transforming the city into a hub of innovation.</p>
+                    <p>Themes such as Artificial Intelligence, Modern Web Development, Cybersecurity, Data Science and Technological Entrepreneurship will be at the center of discussions, providing a complete immersion in the universe of information technology.</p>
                 </div>
                 
                 <div class="about-highlights">
@@ -1486,7 +1487,7 @@ text-align: justify;
                     <ul style="list-style-type: disc; padding-left: 20px; margin-bottom: 15px;">
                         <li><s>O <strong>Lote 1</strong> (R$ 25,00) é válido para as primeiras <strong>50 inscrições pagas</strong></s></li>
                         <li>Após o esgotamento das 50 vagas do Lote 1, o valor passa para o <strong>Lote 2</strong> (R$ 35,00)</li>
-                        <li>O lote é garantido apenas com o <strong>pagamento confirmado</strong> do comprovante</li>
+                        <li>O lote is garantido apenas com o <strong>pagamento confirmado</strong> do comprovante</li>
                         <li>As demais categorias mantêm valores fixos sem sistema de lotes</li>
                     </ul>
                     
@@ -1640,7 +1641,7 @@ text-align: justify;
                 <div id="login-message"></div>
                 <form class="login-form" id="login-form">
                     <div class="form-group">
-                        <label for="login-email">Email</label>
+                        <label for="login-email">Email ou CPF</label>
                         <input type="text" id="login-email" name="login" required>
                     </div>
                     
@@ -1659,8 +1660,8 @@ text-align: justify;
                 <div id="recovery-form" style="display: none; margin-top: 20px;">
                     <h3>Recuperar Senha</h3>
                     <div class="form-group">
-                        <label for="recovery-email">Email</label>
-                        <input type="email" id="recovery-email" name="email">
+                        <label for="recovery-login">Email ou CPF</label>
+                        <input type="text" id="recovery-login" name="login">
                     </div>
                     <input type="hidden" id="recovery-action" name="action" value="recuperar_senha">
                     <button type="button" id="enviar-recuperacao">
@@ -1900,27 +1901,28 @@ text-align: justify;
         const loginForm = document.getElementById('login-form');
         const messageContainer = document.getElementById('login-message');
         
+        // Formulário de login
         loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             // Sanitização de inputs
-            const emailInput = document.getElementById('login-email');
+            const loginInput = document.getElementById('login-email');
             const senhaInput = document.getElementById('login-senha');
             const actionInput = document.getElementById('login-action');
             
-            // Remover caracteres potencialmente perigosos
-            emailInput.value = emailInput.value.replace(/[^a-zA-Z0-9@._-]/g, '');
+            // Remover caracteres potencialmente perigosos, mas manter pontos e traços para CPF
+            loginInput.value = loginInput.value.replace(/[^a-zA-Z0-9@._-]/g, '');
             senhaInput.value = senhaInput.value.replace(/[^a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/g, '');
             
             // Validação básica
-            if(!emailInput.value.trim() || !senhaInput.value.trim()) {
+            if(!loginInput.value.trim() || !senhaInput.value.trim()) {
                 messageContainer.innerHTML = `<div class="alert alert-error">Por favor, preencha todos os campos.</div>`;
                 return;
             }
             
             // envio do formulário
             const formData = {
-                login: emailInput.value,
+                login: loginInput.value,
                 senha: senhaInput.value,
                 action: actionInput.value
             };
@@ -1985,26 +1987,19 @@ text-align: justify;
 
         // Envio do formulário de recuperação de senha
         document.getElementById('enviar-recuperacao').addEventListener('click', async function() {
-            const email = document.getElementById('recovery-email').value;
+            const login = document.getElementById('recovery-login').value;
             
-            if (!email) {
-                messageContainer.innerHTML = `<div class="alert alert-error">Por favor, informe seu email.</div>`;
+            if (!login) {
+                messageContainer.innerHTML = `<div class="alert alert-error">Por favor, informe seu email ou CPF.</div>`;
                 return;
             }
             
-            // Validar email
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if(!emailRegex.test(email)) {
-                messageContainer.innerHTML = `<div class="alert alert-error">Por favor, insira um email válido.</div>`;
-                return;
-            }
-
             // Mostrar spinner e alterar texto
             toggleRecoveryLoading(true);
             
             // envio do formulário
             const formData = {
-                email: email,
+                login: login,
                 action: 'recuperar_senha'
             };
             

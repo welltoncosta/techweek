@@ -23,6 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
+
+
     // Ação: Editar participante
     if (isset($_POST['action']) && $_POST['action'] === 'editar_participante') {
         $id = $_POST['id'];
@@ -628,6 +630,113 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Ação: Criar backup
+if (isset($_POST['action']) && $_POST['action'] === 'criar_backup') {
+    $tipo = $_POST['tipo'];
+    $response = ['success' => false, 'message' => ''];
+    
+    // Diretório para armazenar backups (fora do root público)
+    $backupDir = '../backups/';
+    if (!file_exists($backupDir)) {
+        mkdir($backupDir, 0755, true);
+    }
+    
+    // Nome do arquivo com timestamp
+    $timestamp = date('Y-m-d_His');
+    $backupFile = '';
+    
+    try {
+        if ($tipo === 'database' || $tipo === 'completo') {
+            // Backup do banco de dados
+            $dbBackupFile = $backupDir . 'backup_db_' . $timestamp . '.sql';
+            exec("mysqldump --user={$username} --password={$password} --host={$host} {$dbname} > {$dbBackupFile}");
+            
+            if (file_exists($dbBackupFile)) {
+                $backupFile = $dbBackupFile;
+                
+                // Registrar no banco de dados
+                $stmt = $pdo->prepare("INSERT INTO backups (nome_arquivo, tipo, tamanho, caminho_arquivo) VALUES (?, 'database', ?, ?)");
+                $stmt->execute([basename($dbBackupFile), formatFileSize(filesize($dbBackupFile)), $dbBackupFile]);
+                
+                $response['success'] = true;
+                $response['message'] = 'Backup do banco criado com sucesso!';
+            } else {
+                $response['message'] = 'Falha ao criar backup do banco.';
+            }
+        }
+        
+        if ($tipo === 'arquivos' || $tipo === 'completo') {
+            // Backup dos arquivos (compactar diretório raiz)
+            $zip = new ZipArchive();
+            $zipFile = $backupDir . 'backup_files_' . $timestamp . '.zip';
+            
+            if ($zip->open($zipFile, ZipArchive::CREATE) === TRUE) {
+                // Adicionar arquivos ao ZIP (excluindo a pasta backups)
+                addFolderToZip('.', $zip, 'backups');
+                $zip->close();
+                
+                if (file_exists($zipFile)) {
+                    $backupFile = $zipFile;
+                    
+                    // Registrar no banco de dados
+                    $stmt = $pdo->prepare("INSERT INTO backups (nome_arquivo, tipo, tamanho, caminho_arquivo) VALUES (?, 'arquivos', ?, ?)");
+                    $stmt->execute([basename($zipFile), formatFileSize(filesize($zipFile)), $zipFile]);
+                    
+                    $response['success'] = true;
+                    $response['message'] = 'Backup de arquivos criado com sucesso!';
+                } else {
+                    $response['message'] = 'Falha ao criar backup de arquivos.';
+                }
+            } else {
+                $response['message'] = 'Não foi possível criar o arquivo ZIP.';
+            }
+        }
+    } catch (Exception $e) {
+        $response['message'] = 'Erro: ' . $e->getMessage();
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit;
+}
+
+// Ação: Excluir backup
+if (isset($_POST['action']) && $_POST['action'] === 'excluir_backup') {
+    $id = $_POST['id'];
+    $response = ['success' => false, 'message' => ''];
+    
+    try {
+        // Buscar informações do backup
+        $stmt = $pdo->prepare("SELECT * FROM backups WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        $backup = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($backup) {
+            // Excluir arquivo físico
+            if (file_exists($backup['caminho_arquivo'])) {
+                unlink($backup['caminho_arquivo']);
+            }
+            
+            // Excluir registro do banco
+            $stmt = $pdo->prepare("DELETE FROM backups WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            
+            $response['success'] = true;
+            $response['message'] = 'Backup excluído com sucesso!';
+        } else {
+            $response['message'] = 'Backup não encontrado.';
+        }
+    } catch (PDOException $e) {
+        $response['message'] = 'Erro ao excluir backup: ' . $e->getMessage();
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit;
+}
+
+
+
     // Se for uma requisição AJAX, retornar JSON
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
         header('Content-Type: application/json');
@@ -636,6 +745,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+
+// Função para formatar tamanho de arquivo (adicionar no início do arquivo)
+function formatFileSize($bytes) {
+    if ($bytes >= 1073741824) {
+        return number_format($bytes / 1073741824, 2) . ' GB';
+    } elseif ($bytes >= 1048576) {
+        return number_format($bytes / 1048576, 2) . ' MB';
+    } elseif ($bytes >= 1024) {
+        return number_format($bytes / 1024, 2) . ' KB';
+    } else {
+        return $bytes . ' bytes';
+    }
+}
+
+// Função para adicionar pasta ao ZIP recursivamente
+function addFolderToZip($folder, &$zip, $excludeFolder = '') {
+    $handle = opendir($folder);
+    while (false !== ($file = readdir($handle))) {
+        if ($file != '.' && $file != '..') {
+            $fullpath = $folder . '/' . $file;
+            // Pular a pasta de backups
+            if ($excludeFolder && strpos($fullpath, $excludeFolder) !== false) {
+                continue;
+            }
+            if (is_dir($fullpath)) {
+                addFolderToZip($fullpath, $zip, $excludeFolder);
+            } else {
+                $zip->addFile($fullpath, $fullpath);
+            }
+        }
+    }
+    closedir($handle);
+}
 
 
 
